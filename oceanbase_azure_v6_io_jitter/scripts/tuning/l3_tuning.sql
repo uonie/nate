@@ -69,6 +69,17 @@ ALTER SYSTEM SET _data_storage_io_timeout            = '60s';   -- [待实测确
 -- 限制 syslog I/O 突发
 -- ALTER SYSTEM SET syslog_io_bandwidth_limit = '30MB';
 
+-- 日志盘水位三阈值(OB_TENANT_PARAMETER, DYNAMIC_EFFECTIVE) [源码]
+--   log_disk_throttling_percentage        默认 60  [40,100]  超过后触发写入限流
+--   log_disk_utilization_threshold        默认 80  [10,100)  超过后回收复用日志文件
+--   log_disk_utilization_limit_threshold  默认 95  [80,100]  超过后停止提交/接收日志
+--   约束: limit_threshold > utilization_threshold  (palf_options.cpp)
+--
+-- 客户 clog 卷已用 78%, 已越过限流线(60)、逼近回收线(80)。
+-- 【首选方案是扩容/降水位, 而非调高阈值】——
+-- 调高阈值只是推迟限流, 并不减少日志盘 I/O 压力。
+-- ALTER SYSTEM SET log_disk_throttling_percentage = 60;   -- 保持默认
+
 
 -- ---------------------------------------------------------------------
 -- 4) 生效确认

@@ -22,6 +22,8 @@ OceanBase 在云上块存储环境中对**瞬时 I/O 高延迟事件**的敏感�
 
 5. **客户现网存在四个影响放大因素**：LVM 多盘条带化、leader 高度集中于同一节点、自动均衡被关闭、clog 卷水位逼近回收阈值。
 
+6. **条带化在 D32s v6 上换不来性能**。官方数据显示单块 PSSDv2 可 provision 到 80,000 IOPS / 2,000 MB/s，**已超过 D32s v6 整机的 uncached 上限 66,667 IOPS / 1,984 MBps** [官方]。微软文档亦直言可"避免为满足需求而条带化磁盘的维护开销"。因此当前的 6 盘 / 4 盘条带只换来了 **4~6 倍的抖动暴露面**（§4.1.1）。
+
 > **证据边界**：客户提供的日志是按 `-4389` 过滤后的摘录，**其中不含切主事件的直接记录**。
 > 本文的因果链由**源码路径**与**时间相关性**建立，属高可信推断；
 > 要升级为现场直接证据，需补充 `DBA_OB_SERVER_EVENT_HISTORY` 与完整 observer/election 日志（见 §3.5 证据边界声明）。
@@ -71,6 +73,8 @@ OceanBase 源码引用统一基于 `oceanbase/oceanbase` commit **`fa399038f7edf
 | 存储接口 | **NVMe**（`MSFT NVMe Accelerator v1.0`） |
 | OB 版本 | 4.3.5.5 |
 | OBProxy | 4.3.1.6 |
+
+该规格的官方远程存储上限 [官方]（详见 §4.1.1）：uncached **66,667 IOPS / 1,984 MBps**，最大 64 块远程盘，**无本地临时盘**。
 
 ### 2.2 磁盘布局 [现场]
 
@@ -328,6 +332,46 @@ inline int64_t CALCULATE_TRIGGER_ELECT_WATER_MARK() { return std::min<int64_t>(M
 
 且 128k 条带单元意味着单个较大 I/O 必然横跨多块盘，进一步提高命中面。
 
+#### 4.1.1 关键：在 D32s v6 上，条带化换不来性能
+
+Microsoft Learn 官方数据 [官方]：
+
+**Standard_D32s_v6 的 VM 级远程存储上限**（`dsv6-series`，Uncached Ultra Disk and Premium SSD v2 列）：
+
+| 项 | 值 |
+|---|---|
+| Uncached IOPS | **66,667** |
+| Uncached 吞吐 | **1,984 MBps** |
+| 突发 IOPS / 吞吐 | 104,167 / 1,984 MBps |
+| 最大远程磁盘数 | 64 |
+| Local Storage | **None**（该系列无本地临时盘） |
+
+**单块 Premium SSD v2 的可 provision 上限**（`disks-types`）：
+
+> "All Premium SSD v2 disks have a baseline IOPS of 3,000 that is free of charge. After 6 GiB, the maximum IOPS a disk can have increases at a rate of 500 per GiB, **up to 80,000 IOPS**. ... To set 80,000 IOPS on a disk, that disk must have at least **160 GiB**."
+>
+> "All Premium SSD v2 disks have a baseline throughput of 125 MB/s ... **2,000 MB/s is the maximum throughput supported for disks that have 8,000 IOPS or more.**"
+
+**由此得出的算术结论**：
+
+| 卷 | 客户配置 | 单块盘的可 provision 上限 | D32s v6 VM 级上限 | 结论 |
+|---|---|---|---|---|
+| `/data/1` | 6 × 300 GiB | 300 GiB ≥ 160 GiB → **80,000 IOPS / 2,000 MB/s** | 66,667 IOPS / 1,984 MBps | **单块盘即可封顶 VM 上限** |
+| `/data/log1` | 4 × 250 GiB | 250 GiB ≥ 160 GiB → **80,000 IOPS / 2,000 MB/s** | 66,667 IOPS / 1,984 MBps | **单块盘即可封顶 VM 上限** |
+
+即：**在 Standard_D32s_v6 上，只要单块 PSSDv2 provision 到位，条带化 4~6 块盘不会带来任何额外性能** ——
+VM 级上限先封顶。条带化在此换到的只有 **4~6 倍的抖动暴露面**。
+
+微软官方文档对这一点有直接表述 [官方]：
+
+> "Premium SSD v2 doesn't support host caching but, benefits significantly from lower latency, which addresses some of the same core problems host caching addresses. **The ability to adjust IOPS, throughput, and size at any time also means you can avoid the maintenance overhead of having to stripe disks to meet your needs.**"
+
+> **前提待确认 [待验证]**：客户材料中未记录各磁盘的 provisioned IOPS / 吞吐设置。
+> 若客户使用的是 PSSDv2 默认档（3,000 IOPS / 125 MB/s），则条带化确实是当时提升总吞吐的手段
+> （6 盘 ≈ 18,000 IOPS / 750 MB/s）。但这是"用暴露面换性能"的低效路径 ——
+> 正确做法是**给单盘 provision**，同样达到 VM 上限且暴露面为 1×。
+> **需向客户确认各盘的 provisioned IOPS 与吞吐值，再据此给出最终布局建议。**
+
 ### 4.2 leader 高度集中 [现场]
 
 5 个日志流中 4 个的主副本集中在节点 46。一次单节点 I/O 停顿即引发**4 个日志流批量切主**，业务影响面被最大化。这与现场日志中 T1 / T1001 / T1002 三个租户同时报错的现象完全吻合。
@@ -336,7 +380,22 @@ inline int64_t CALCULATE_TRIGGER_ELECT_WATER_MARK() { return std::min<int64_t>(M
 
 ### 4.3 clog 卷水位偏高 [现场]
 
-日志卷已用 **78%**（776G / 1000G），逼近 `log_disk_utilization_threshold` 默认值 **80** [源码]。越过该阈值后 PALF 开始回收复用日志段，会额外增加日志盘 I/O 压力，提高在抖动窗口内命中慢 I/O 的概率。
+日志卷已用 **78%**（776G / 1000G）。相关阈值（均为 `OB_TENANT_PARAMETER`、`DYNAMIC_EFFECTIVE`）[源码]：
+
+| 参数 | 默认 | 范围 | 语义 |
+|---|---|---|---|
+| `log_disk_utilization_threshold` | **80** | [10,100) | 超过后开始**回收复用**日志文件 |
+| `log_disk_utilization_limit_threshold` | **95** | [80,100] | 超过后**停止提交或接收日志** |
+| `log_disk_throttling_percentage` | **60** | [40,100] | 超过后触发**写入限流**（设为 100 表示关闭限流） |
+
+源码约束：`log_disk_utilization_limit_threshold_ > log_disk_utilization_threshold_`（`palf_options.cpp`）。
+
+客户当前 78% 的水位：
+
+- **已越过 `log_disk_throttling_percentage`（60）** → 写入限流已在生效；
+- **逼近 `log_disk_utilization_threshold`（80）** → 即将进入日志段回收复用，额外增加日志盘 I/O 压力；
+
+两者叠加，提高了在抖动窗口内命中慢 I/O 的概率。
 
 ---
 
@@ -392,13 +451,14 @@ inline int64_t CALCULATE_TRIGGER_ELECT_WATER_MARK() { return std::min<int64_t>(M
 
 > **待填**。执行 [`TEST-PLAN.md`](TEST-PLAN.md) 后回填，所有数据标注 [实测] 并附原始数据文件路径。
 
-- 7.1 Azure v6 基线性能表现
+- 7.1 Azure v6 基线性能表现（与官方 66,667 IOPS / 1,984 MBps 上限的达成率）
 - 7.2 A 域（OS 盘）抖动影响
 - 7.3 B 域（数据盘）抖动影响
 - 7.4 C 域（日志盘）抖动影响
 - 7.5 H1 / H2 假设判定结果
 - 7.6 分层调优贡献度对比
 - 7.7 leader 集中 vs 均衡的影响面对比
+- 7.8 A 组（多盘条带）vs B 组（单盘 provisioned）性能与暴露面对比
 
 ---
 
@@ -433,9 +493,15 @@ cat /sys/module/nvme_core/parameters/io_timeout   # 期望 240
 
 | 项 | 建议 | 依据 |
 |---|---|---|
-| 条带盘数 | **显著降低**，优先用单块大容量 PSSDv2 并配置 provisioned IOPS / 吞吐 | §4.1，条带化放大暴露面 4~6 倍 |
+| 条带盘数 | **降为单块大容量 PSSDv2 + provisioned IOPS/吞吐** | §4.1.1：在 D32s v6 上单盘即可封顶 VM 级上限（66,667 IOPS / 1,984 MBps），条带化只换来 4~6 倍暴露面 [官方] |
+| provisioned 值 | data / clog 各按需求设置，**单盘 ≥160 GiB 即可 provision 到 80,000 IOPS**，8,000 IOPS 以上可达 2,000 MB/s | [官方] `disks-types` |
 | 三域隔离 | OS / data / clog 使用独立卷 | 客户已隔离 ✔ |
-| clog 水位 | 降至 **60% 以下** | §4.3，避免逼近 80% 回收阈值 |
+| clog 水位 | 降至 **60% 以下** | §4.3：78% 已越过 `log_disk_throttling_percentage`(60) 写入限流线，且逼近 `log_disk_utilization_threshold`(80) 回收线 |
+| host caching | 无需考虑 | [官方] "Premium SSD v2 doesn't support host caching"；且 Dsv6 系列无本地临时盘，VM 规格表仅列 Uncached 指标 |
+
+微软官方对"是否需要条带化"的直接表述 [官方]：
+
+> "The ability to adjust IOPS, throughput, and size at any time also means you can **avoid the maintenance overhead of having to stripe disks** to meet your needs."
 
 ### L3 — OceanBase 判定模型（关键层）
 
@@ -485,7 +551,7 @@ ALTER SYSTEM SET _data_storage_io_timeout              = '60s'; -- [待实测确
 | 3 | 搭建 3 × D32s v6 测试环境 | 执行 `TEST-PLAN.md` | §7 全部实测章节 |
 | 4 | 执行 §5.1 H1/H2 判定实验 | **回答"能否完全吸收"** | §5、§8 最终建议定稿 |
 | 5 | 在 4.3.5.5 上用 `GV$OB_PARAMETERS` 复核全部参数默认值 | 确认本文源码引用与实际版本一致 | §3 各表格的版本适用性 |
-| 6 | 核实 Azure v6 远程盘的 host caching 支持情况（需 MS Learn 原文） | 补充 L2 布局建议 | 该建议暂未写入本文 |
+| 6 | **向客户索取各磁盘的 provisioned IOPS / 吞吐设置** | 判定条带化是否真的换到了性能 | §4.1.1 与 L2 布局建议的最终定稿 |
 
 > 在第 4 项完成前，§8 中标注 [待实测确认] 的参数取值**不可作为对客户的正式建议**。
 
@@ -501,6 +567,8 @@ ALTER SYSTEM SET _data_storage_io_timeout              = '60s'; -- [待实测确
 | A2 | Azure NVMe 通用 FAQ | <https://learn.microsoft.com/azure/virtual-machines/enable-nvme-faqs> |
 | A3 | OceanBase `data_storage_error_tolerance_time` | <https://www.oceanbase.com/docs/common-oceanbase-database-cn-10000000001702092> |
 | A4 | OceanBase `data_storage_warning_tolerance_time` | <https://www.oceanbase.com/docs/common-oceanbase-database-cn-10000000001702093> |
+| A5 | **Dsv6 系列规格**：无本地临时盘；Standard_D32s_v6 uncached PSSDv2 上限 66,667 IOPS / 1,984 MBps | <https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv6-series> |
+| A6 | **Azure 托管磁盘类型**：PSSDv2 不支持 host caching；IOPS/吞吐 provision 规则；"可避免条带化的维护开销" | <https://learn.microsoft.com/azure/virtual-machines/disks-types> |
 
 ### 源码
 
@@ -508,11 +576,12 @@ ALTER SYSTEM SET _data_storage_io_timeout              = '60s'; -- [待实测确
 
 | # | 文件 | 内容 |
 |---|---|---|
-| S1 | `src/share/parameter/ob_parameter_seed.ipp` | `_data_storage_io_timeout`、`data_storage_warning_tolerance_time`、`data_storage_error_tolerance_time`、`log_storage_warning_tolerance_time`、`log_storage_warning_trigger_percentage` 的定义、默认值与取值范围 |
+| S1 | `src/share/parameter/ob_parameter_seed.ipp` | `_data_storage_io_timeout`、`data_storage_warning_tolerance_time`、`data_storage_error_tolerance_time`、`log_storage_warning_tolerance_time`、`log_storage_warning_trigger_percentage`、`log_disk_utilization_threshold`、`log_disk_utilization_limit_threshold`(95, [80,100])、`log_disk_throttling_percentage`(60, [40,100]) 的定义、默认值与取值范围 |
 | S2 | `src/logservice/leader_coordinator/ob_failure_detector.cpp` | 日志盘故障判定的消费方，位于主选举协调器路径 |
 | S3 | `src/logservice/palf/election/utils/election_common_define.h` | PALF 选举租约、续约周期、触发选举水位线的计算式 |
 | S4 | `src/logservice/palf/election/algorithm/election_impl.cpp` | `RoleChangeReason::LeaseExpiredToRevoke` 租约到期卸任 |
 | S5 | `mittest/logservice/test_ob_simple_log_disk_hang.cpp` | 官方磁盘 hang 集成测试用例，可作方法论参考 |
+| S6 | `src/logservice/palf/palf_options.{h,cpp}` | 日志盘水位三阈值的语义注释与约束校验（`limit_threshold > utilization_threshold`） |
 
 ### 社区（非官方，仅作旁证）
 

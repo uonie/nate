@@ -101,7 +101,7 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
   <h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
   <div class="meta">
     OceanBase 4.3.5.5 &nbsp;·&nbsp; Azure Standard D32s v6 + Premium SSD v2
-    &nbsp;·&nbsp; 生成时间 2026-08-31 01:16
+    &nbsp;·&nbsp; 生成时间 2026-08-31 01:23
   </div>
 </header>
 <section class=""><h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
@@ -129,6 +129,9 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </li>
 <li>
 <p><strong>客户现网存在四个影响放大因素</strong>：LVM 多盘条带化、leader 高度集中于同一节点、自动均衡被关闭、clog 卷水位逼近回收阈值。</p>
+</li>
+<li>
+<p><strong>条带化在 D32s v6 上换不来性能</strong>。官方数据显示单块 PSSDv2 可 provision 到 80,000 IOPS / 2,000 MB/s，<strong>已超过 D32s v6 整机的 uncached 上限 66,667 IOPS / 1,984 MBps</strong> <span class="badge b-official">官方</span>。微软文档亦直言可"避免为满足需求而条带化磁盘的维护开销"。因此当前的 6 盘 / 4 盘条带只换来了 <strong>4~6 倍的抖动暴露面</strong>（§4.1.1）。</p>
 </li>
 </ol>
 <blockquote>
@@ -227,6 +230,7 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </tr>
 </tbody>
 </table>
+<p>该规格的官方远程存储上限 <span class="badge b-official">官方</span>（详见 §4.1.1）：uncached <strong>66,667 IOPS / 1,984 MBps</strong>，最大 64 块远程盘，<strong>无本地临时盘</strong>。</p>
 <h3 id="d0-2-2-磁盘布局-现场">2.2 磁盘布局 <span class="badge b-field">现场</span></h3>
 <table>
 <thead>
@@ -716,11 +720,125 @@ sensitivity<span style="color: #BBB"> </span><span style="color: #666">=</span><
 </tbody>
 </table>
 <p>且 128k 条带单元意味着单个较大 I/O 必然横跨多块盘，进一步提高命中面。</p>
+<h4>4.1.1 关键：在 D32s v6 上，条带化换不来性能</h4>
+<p>Microsoft Learn 官方数据 <span class="badge b-official">官方</span>：</p>
+<p><strong>Standard_D32s_v6 的 VM 级远程存储上限</strong>（<code>dsv6-series</code>，Uncached Ultra Disk and Premium SSD v2 列）：</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Uncached IOPS</td>
+<td><strong>66,667</strong></td>
+</tr>
+<tr>
+<td>Uncached 吞吐</td>
+<td><strong>1,984 MBps</strong></td>
+</tr>
+<tr>
+<td>突发 IOPS / 吞吐</td>
+<td>104,167 / 1,984 MBps</td>
+</tr>
+<tr>
+<td>最大远程磁盘数</td>
+<td>64</td>
+</tr>
+<tr>
+<td>Local Storage</td>
+<td><strong>None</strong>（该系列无本地临时盘）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>单块 Premium SSD v2 的可 provision 上限</strong>（<code>disks-types</code>）：</p>
+<blockquote>
+<p>"All Premium SSD v2 disks have a baseline IOPS of 3,000 that is free of charge. After 6 GiB, the maximum IOPS a disk can have increases at a rate of 500 per GiB, <strong>up to 80,000 IOPS</strong>. ... To set 80,000 IOPS on a disk, that disk must have at least <strong>160 GiB</strong>."</p>
+<p>"All Premium SSD v2 disks have a baseline throughput of 125 MB/s ... <strong>2,000 MB/s is the maximum throughput supported for disks that have 8,000 IOPS or more.</strong>"</p>
+</blockquote>
+<p><strong>由此得出的算术结论</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>卷</th>
+<th>客户配置</th>
+<th>单块盘的可 provision 上限</th>
+<th>D32s v6 VM 级上限</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/data/1</code></td>
+<td>6 × 300 GiB</td>
+<td>300 GiB ≥ 160 GiB → <strong>80,000 IOPS / 2,000 MB/s</strong></td>
+<td>66,667 IOPS / 1,984 MBps</td>
+<td><strong>单块盘即可封顶 VM 上限</strong></td>
+</tr>
+<tr>
+<td><code>/data/log1</code></td>
+<td>4 × 250 GiB</td>
+<td>250 GiB ≥ 160 GiB → <strong>80,000 IOPS / 2,000 MB/s</strong></td>
+<td>66,667 IOPS / 1,984 MBps</td>
+<td><strong>单块盘即可封顶 VM 上限</strong></td>
+</tr>
+</tbody>
+</table>
+<p>即：<strong>在 Standard_D32s_v6 上，只要单块 PSSDv2 provision 到位，条带化 4~6 块盘不会带来任何额外性能</strong> ——
+VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动暴露面</strong>。</p>
+<p>微软官方文档对这一点有直接表述 <span class="badge b-official">官方</span>：</p>
+<blockquote>
+<p>"Premium SSD v2 doesn't support host caching but, benefits significantly from lower latency, which addresses some of the same core problems host caching addresses. <strong>The ability to adjust IOPS, throughput, and size at any time also means you can avoid the maintenance overhead of having to stripe disks to meet your needs.</strong>"</p>
+<p><strong>前提待确认 <span class="badge b-todo">待验证</span></strong>：客户材料中未记录各磁盘的 provisioned IOPS / 吞吐设置。
+若客户使用的是 PSSDv2 默认档（3,000 IOPS / 125 MB/s），则条带化确实是当时提升总吞吐的手段
+（6 盘 ≈ 18,000 IOPS / 750 MB/s）。但这是"用暴露面换性能"的低效路径 ——
+正确做法是<strong>给单盘 provision</strong>，同样达到 VM 上限且暴露面为 1×。
+<strong>需向客户确认各盘的 provisioned IOPS 与吞吐值，再据此给出最终布局建议。</strong></p>
+</blockquote>
 <h3 id="d0-4-2-leader-高度集中-现场">4.2 leader 高度集中 <span class="badge b-field">现场</span></h3>
 <p>5 个日志流中 4 个的主副本集中在节点 46。一次单节点 I/O 停顿即引发<strong>4 个日志流批量切主</strong>，业务影响面被最大化。这与现场日志中 T1 / T1001 / T1002 三个租户同时报错的现象完全吻合。</p>
 <p><strong>加剧因素</strong>：客户配置中设置了 <code>enable_rebalance = FALSE</code> 与 <code>enable_transfer = FALSE</code> <span class="badge b-field">现场</span>，即关闭了自动均衡，leader 集中的状态不会被 OceanBase 自动纠正，切主后也不会自动回迁均衡。</p>
 <h3 id="d0-4-3-clog-卷水位偏高-现场">4.3 clog 卷水位偏高 <span class="badge b-field">现场</span></h3>
-<p>日志卷已用 <strong>78%</strong>（776G / 1000G），逼近 <code>log_disk_utilization_threshold</code> 默认值 <strong>80</strong> <span class="badge b-source">源码</span>。越过该阈值后 PALF 开始回收复用日志段，会额外增加日志盘 I/O 压力，提高在抖动窗口内命中慢 I/O 的概率。</p>
+<p>日志卷已用 <strong>78%</strong>（776G / 1000G）。相关阈值（均为 <code>OB_TENANT_PARAMETER</code>、<code>DYNAMIC_EFFECTIVE</code>）<span class="badge b-source">源码</span>：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认</th>
+<th>范围</th>
+<th>语义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>log_disk_utilization_threshold</code></td>
+<td><strong>80</strong></td>
+<td>[10,100)</td>
+<td>超过后开始<strong>回收复用</strong>日志文件</td>
+</tr>
+<tr>
+<td><code>log_disk_utilization_limit_threshold</code></td>
+<td><strong>95</strong></td>
+<td>[80,100]</td>
+<td>超过后<strong>停止提交或接收日志</strong></td>
+</tr>
+<tr>
+<td><code>log_disk_throttling_percentage</code></td>
+<td><strong>60</strong></td>
+<td>[40,100]</td>
+<td>超过后触发<strong>写入限流</strong>（设为 100 表示关闭限流）</td>
+</tr>
+</tbody>
+</table>
+<p>源码约束：<code>log_disk_utilization_limit_threshold_ &gt; log_disk_utilization_threshold_</code>（<code>palf_options.cpp</code>）。</p>
+<p>客户当前 78% 的水位：</p>
+<ul>
+<li><strong>已越过 <code>log_disk_throttling_percentage</code>（60）</strong> → 写入限流已在生效；</li>
+<li><strong>逼近 <code>log_disk_utilization_threshold</code>（80）</strong> → 即将进入日志段回收复用，额外增加日志盘 I/O 压力；</li>
+</ul>
+<p>两者叠加，提高了在抖动窗口内命中慢 I/O 的概率。</p>
 <hr />
 <h2 id="d0-5-关键结论-能否通过调参完全吸收">5. 关键结论：能否通过调参完全吸收</h2>
 <h3 id="d0-5-1-核心可证伪假设-必须由实测判定">5.1 核心可证伪假设（必须由实测判定）</h3>
@@ -797,13 +915,14 @@ sensitivity<span style="color: #BBB"> </span><span style="color: #666">=</span><
 <p><strong>待填</strong>。执行 <a href="TEST-PLAN.md"><code>TEST-PLAN.md</code></a> 后回填，所有数据标注 <span class="badge b-measured">实测</span> 并附原始数据文件路径。</p>
 </blockquote>
 <ul>
-<li>7.1 Azure v6 基线性能表现</li>
+<li>7.1 Azure v6 基线性能表现（与官方 66,667 IOPS / 1,984 MBps 上限的达成率）</li>
 <li>7.2 A 域（OS 盘）抖动影响</li>
 <li>7.3 B 域（数据盘）抖动影响</li>
 <li>7.4 C 域（日志盘）抖动影响</li>
 <li>7.5 H1 / H2 假设判定结果</li>
 <li>7.6 分层调优贡献度对比</li>
 <li>7.7 leader 集中 vs 均衡的影响面对比</li>
+<li>7.8 A 组（多盘条带）vs B 组（单盘 provisioned）性能与暴露面对比</li>
 </ul>
 <hr />
 <h2 id="d0-8-最佳实践配置清单">8. 最佳实践配置清单</h2>
@@ -870,8 +989,13 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <tbody>
 <tr>
 <td>条带盘数</td>
-<td><strong>显著降低</strong>，优先用单块大容量 PSSDv2 并配置 provisioned IOPS / 吞吐</td>
-<td>§4.1，条带化放大暴露面 4~6 倍</td>
+<td><strong>降为单块大容量 PSSDv2 + provisioned IOPS/吞吐</strong></td>
+<td>§4.1.1：在 D32s v6 上单盘即可封顶 VM 级上限（66,667 IOPS / 1,984 MBps），条带化只换来 4~6 倍暴露面 <span class="badge b-official">官方</span></td>
+</tr>
+<tr>
+<td>provisioned 值</td>
+<td>data / clog 各按需求设置，<strong>单盘 ≥160 GiB 即可 provision 到 80,000 IOPS</strong>，8,000 IOPS 以上可达 2,000 MB/s</td>
+<td><span class="badge b-official">官方</span> <code>disks-types</code></td>
 </tr>
 <tr>
 <td>三域隔离</td>
@@ -881,10 +1005,19 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <tr>
 <td>clog 水位</td>
 <td>降至 <strong>60% 以下</strong></td>
-<td>§4.3，避免逼近 80% 回收阈值</td>
+<td>§4.3：78% 已越过 <code>log_disk_throttling_percentage</code>(60) 写入限流线，且逼近 <code>log_disk_utilization_threshold</code>(80) 回收线</td>
+</tr>
+<tr>
+<td>host caching</td>
+<td>无需考虑</td>
+<td><span class="badge b-official">官方</span> "Premium SSD v2 doesn't support host caching"；且 Dsv6 系列无本地临时盘，VM 规格表仅列 Uncached 指标</td>
 </tr>
 </tbody>
 </table>
+<p>微软官方对"是否需要条带化"的直接表述 <span class="badge b-official">官方</span>：</p>
+<blockquote>
+<p>"The ability to adjust IOPS, throughput, and size at any time also means you can <strong>avoid the maintenance overhead of having to stripe disks</strong> to meet your needs."</p>
+</blockquote>
 <h3 id="d0-l3-oceanbase-判定模型-关键层">L3 — OceanBase 判定模型（关键层）</h3>
 <div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic">-- 核心：把日志盘判定模型从"单次 IO 超时"改为"吞吐持续劣化"</span>
 <span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>log_storage_warning_trigger_percentage<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #40A070">20</span>;<span style="color: #BBB">   </span><span style="color: #60A0B0; font-style: italic">-- [待实测确认] 取值 [0,50]</span>
@@ -1002,9 +1135,9 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 </tr>
 <tr>
 <td>6</td>
-<td>核实 Azure v6 远程盘的 host caching 支持情况（需 MS Learn 原文）</td>
-<td>补充 L2 布局建议</td>
-<td>该建议暂未写入本文</td>
+<td><strong>向客户索取各磁盘的 provisioned IOPS / 吞吐设置</strong></td>
+<td>判定条带化是否真的换到了性能</td>
+<td>§4.1.1 与 L2 布局建议的最终定稿</td>
 </tr>
 </tbody>
 </table>
@@ -1043,6 +1176,16 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <td>OceanBase <code>data_storage_warning_tolerance_time</code></td>
 <td><a href="https://www.oceanbase.com/docs/common-oceanbase-database-cn-10000000001702093">https://www.oceanbase.com/docs/common-oceanbase-database-cn-10000000001702093</a></td>
 </tr>
+<tr>
+<td>A5</td>
+<td><strong>Dsv6 系列规格</strong>：无本地临时盘；Standard_D32s_v6 uncached PSSDv2 上限 66,667 IOPS / 1,984 MBps</td>
+<td><a href="https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv6-series">https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv6-series</a></td>
+</tr>
+<tr>
+<td>A6</td>
+<td><strong>Azure 托管磁盘类型</strong>：PSSDv2 不支持 host caching；IOPS/吞吐 provision 规则；"可避免条带化的维护开销"</td>
+<td><a href="https://learn.microsoft.com/azure/virtual-machines/disks-types">https://learn.microsoft.com/azure/virtual-machines/disks-types</a></td>
+</tr>
 </tbody>
 </table>
 <h3 id="d0-源码">源码</h3>
@@ -1059,7 +1202,7 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <tr>
 <td>S1</td>
 <td><code>src/share/parameter/ob_parameter_seed.ipp</code></td>
-<td><code>_data_storage_io_timeout</code>、<code>data_storage_warning_tolerance_time</code>、<code>data_storage_error_tolerance_time</code>、<code>log_storage_warning_tolerance_time</code>、<code>log_storage_warning_trigger_percentage</code> 的定义、默认值与取值范围</td>
+<td><code>_data_storage_io_timeout</code>、<code>data_storage_warning_tolerance_time</code>、<code>data_storage_error_tolerance_time</code>、<code>log_storage_warning_tolerance_time</code>、<code>log_storage_warning_trigger_percentage</code>、<code>log_disk_utilization_threshold</code>、<code>log_disk_utilization_limit_threshold</code>(95, [80,100])、<code>log_disk_throttling_percentage</code>(60, [40,100]) 的定义、默认值与取值范围</td>
 </tr>
 <tr>
 <td>S2</td>
@@ -1080,6 +1223,11 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <td>S5</td>
 <td><code>mittest/logservice/test_ob_simple_log_disk_hang.cpp</code></td>
 <td>官方磁盘 hang 集成测试用例，可作方法论参考</td>
+</tr>
+<tr>
+<td>S6</td>
+<td><code>src/logservice/palf/palf_options.{h,cpp}</code></td>
+<td>日志盘水位三阈值的语义注释与约束校验（<code>limit_threshold &gt; utilization_threshold</code>）</td>
 </tr>
 </tbody>
 </table>
@@ -1140,7 +1288,7 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <tr>
 <td>Q1</td>
 <td>Azure v6 上 OB 的基线表现如何</td>
-<td>无注入时的 TPS / P99 / I/O 延迟分布</td>
+<td>无注入时的 TPS / P99 / I/O 延迟分布；与官方 VM 级上限（<strong>66,667 IOPS / 1,984 MBps</strong>）对比达成率</td>
 </tr>
 <tr>
 <td>Q2</td>
@@ -1155,7 +1303,7 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <tr>
 <td>Q4</td>
 <td>最佳实践配置是什么</td>
-<td>分层调优的贡献度对比（§6）</td>
+<td>分层调优的贡献度对比（§6）+ A/B 布局对比（S11）</td>
 </tr>
 </tbody>
 </table>
@@ -1211,13 +1359,19 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 </tr>
 <tr>
 <td><strong>B：优化布局</strong></td>
-<td>1 × 1.8T PSSDv2，provisioned IOPS + 吞吐</td>
-<td>1 × 1T PSSDv2，provisioned IOPS + 吞吐</td>
+<td><strong>1 × 1.8T PSSDv2</strong>，provisioned <strong>64,000 IOPS / 1,900 MB/s</strong></td>
+<td><strong>1 × 1T PSSDv2</strong>，provisioned <strong>32,000 IOPS / 1,900 MB/s</strong></td>
 <td>1 × 400G</td>
 </tr>
 </tbody>
 </table>
 <p>A 组用于复现客户问题，B 组用于验证 §L2 布局建议的收益。</p>
+<p><strong>B 组 provisioned 值的依据</strong> <span class="badge b-official">官方</span>：Standard_D32s_v6 的 VM 级 uncached 上限为 66,667 IOPS / 1,984 MBps；
+单块 PSSDv2 只要 ≥160 GiB 即可 provision 到 80,000 IOPS，8,000 IOPS 以上即可达 2,000 MB/s。
+因此单盘足以顶到 VM 上限，无需条带化。</p>
+<p><strong>B 组必须验证的关键命题</strong>：在 D32s v6 上，<code>1 块 provisioned 盘</code> 的吞吐/IOPS/延迟
+与 <code>4~6 块盘条带</code> <strong>无显著差异</strong>（因 VM 级上限先封顶），但抖动暴露面从 4~6× 降到 1×。
+若实测推翻该命题（例如条带化确实更快），则 L2 建议需要重写。</p>
 <h3 id="d1-2-3-拓扑对照">2.3 拓扑对照</h3>
 <table>
 <thead>
@@ -1479,6 +1633,13 @@ dmsetup<span style="color: #BBB"> </span>resume<span style="color: #BBB"> </span
 <td>15s</td>
 <td>leader 集中组 vs 均衡组</td>
 <td><strong>量化 leader 集中的放大倍数</strong></td>
+</tr>
+<tr>
+<td><strong>S11</strong></td>
+<td>无注入（纯性能）</td>
+<td>—</td>
+<td>A 组布局 vs B 组布局</td>
+<td><strong>验证"条带化换不来性能"命题</strong>：对比 TPS/IOPS/吞吐/P99</td>
 </tr>
 </tbody>
 </table>

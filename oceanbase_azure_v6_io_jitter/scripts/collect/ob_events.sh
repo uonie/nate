@@ -104,6 +104,7 @@ WHERE name IN (
   'log_storage_warning_trigger_percentage',
   'log_disk_utilization_threshold',
   'log_disk_utilization_limit_threshold',
+  'log_disk_throttling_percentage',
   'freeze_trigger_percentage',
   'memstore_limit_percentage',
   'enable_rebalance',
