@@ -95,40 +95,46 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </head>
 <body>
 <div class="layout">
-<nav class="toc"><div class="toc-head">分析报告</div><ul><li><a href="#d0-摘要">摘要</a></li><li><a href="#d0-0-证据等级规范">0. 证据等级规范</a></li><li><a href="#d0-1-背景">1. 背景</a></li><li><a href="#d0-2-客户环境现状">2. 客户环境现状</a></li><li style="padding-left:14px"><a href="#d0-2-1-计算与存储-现场">2.1 计算与存储 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-2-磁盘布局-现场">2.2 磁盘布局 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-3-集群拓扑-现场">2.3 集群拓扑 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-4-已正确配置的项-现场">2.4 已正确配置的项 [现场]</a></li><li><a href="#d0-3-核心分析-三条判定链路与超时层级">3. 核心分析：三条判定链路与超时层级</a></li><li style="padding-left:14px"><a href="#d0-3-1-超时层级全景">3.1 超时层级全景</a></li><li style="padding-left:14px"><a href="#d0-3-2-链路-a-数据盘故障判定">3.2 链路 A：数据盘故障判定</a></li><li style="padding-left:14px"><a href="#d0-3-3-链路-b-日志盘故障判定-最激进">3.3 链路 B：日志盘故障判定（最激进）</a></li><li style="padding-left:14px"><a href="#d0-3-4-链路-c-palf-选举租约-硬编码-不可调">3.4 链路 C：PALF 选举租约（硬编码，不可调）</a></li><li style="padding-left:14px"><a href="#d0-3-5-现场日志逐条对照-现场">3.5 现场日志逐条对照 [现场]</a></li><li><a href="#d0-4-影响放大因素">4. 影响放大因素</a></li><li style="padding-left:14px"><a href="#d0-4-1-lvm-多盘条带化-现场">4.1 LVM 多盘条带化 [现场]</a></li><li style="padding-left:14px"><a href="#d0-4-2-leader-高度集中-现场">4.2 leader 高度集中 [现场]</a></li><li style="padding-left:14px"><a href="#d0-4-3-clog-卷水位偏高-现场">4.3 clog 卷水位偏高 [现场]</a></li><li><a href="#d0-5-关键结论-能否通过调参完全吸收">5. 关键结论：能否通过调参完全吸收</a></li><li style="padding-left:14px"><a href="#d0-5-1-核心可证伪假设-必须由实测判定">5.1 核心可证伪假设（必须由实测判定）</a></li><li style="padding-left:14px"><a href="#d0-5-2-已可确定的结论">5.2 已可确定的结论</a></li><li><a href="#d0-6-测试方案">6. 测试方案</a></li><li><a href="#d0-7-实测结果">7. 实测结果</a></li><li><a href="#d0-8-最佳实践配置清单">8. 最佳实践配置清单</a></li><li style="padding-left:14px"><a href="#d0-l1-os-内核">L1 — OS / 内核</a></li><li style="padding-left:14px"><a href="#d0-l2-存储布局">L2 — 存储布局</a></li><li style="padding-left:14px"><a href="#d0-l3-oceanbase-判定模型-关键层">L3 — OceanBase 判定模型（关键层）</a></li><li style="padding-left:14px"><a href="#d0-l4-缓冲与节流">L4 — 缓冲与节流</a></li><li style="padding-left:14px"><a href="#d0-l5-架构与接入层">L5 — 架构与接入层</a></li><li><a href="#d0-9-下一步行动">9. 下一步行动</a></li><li><a href="#d0-10-附录-完整引用清单">10. 附录：完整引用清单</a></li><li style="padding-left:14px"><a href="#d0-官方文档">官方文档</a></li><li style="padding-left:14px"><a href="#d0-源码">源码</a></li><li style="padding-left:14px"><a href="#d0-社区-非官方-仅作旁证">社区（非官方，仅作旁证）</a></li><li style="padding-left:14px"><a href="#d0-现场材料">现场材料</a></li></ul><div class="toc-head">测试执行方案</div><ul><li><a href="#d1-1-测试目标">1. 测试目标</a></li><li><a href="#d1-2-测试环境">2. 测试环境</a></li><li style="padding-left:14px"><a href="#d1-2-1-集群">2.1 集群</a></li><li style="padding-left:14px"><a href="#d1-2-2-磁盘两组对照">2.2 磁盘两组对照</a></li><li style="padding-left:14px"><a href="#d1-2-3-拓扑对照">2.3 拓扑对照</a></li><li style="padding-left:14px"><a href="#d1-2-4-负载">2.4 负载</a></li><li><a href="#d1-3-三个磁盘域独立测试">3. 三个磁盘域独立测试</a></li><li><a href="#d1-4-注入方法">4. 注入方法</a></li><li style="padding-left:14px"><a href="#d1-4-1-主手段-dmsetup-suspend-resume">4.1 主手段：dmsetup suspend/resume</a></li><li style="padding-left:14px"><a href="#d1-4-2-对照手段">4.2 对照手段</a></li><li style="padding-left:14px"><a href="#d1-4-3-注入粒度">4.3 注入粒度</a></li><li style="padding-left:14px"><a href="#d1-4-4-时长档位">4.4 时长档位</a></li><li><a href="#d1-5-场景矩阵">5. 场景矩阵</a></li><li style="padding-left:14px"><a href="#d1-5-1-h1-h2-判定实验-最高优先级">5.1 H1 / H2 判定实验（最高优先级）</a></li><li><a href="#d1-6-分层调优与贡献度分析">6. 分层调优与贡献度分析</a></li><li style="padding-left:14px"><a href="#d1-6-1-执行顺序">6.1 执行顺序</a></li><li><a href="#d1-7-观测指标与采集">7. 观测指标与采集</a></li><li style="padding-left:14px"><a href="#d1-7-1-业务面">7.1 业务面</a></li><li style="padding-left:14px"><a href="#d1-7-2-oceanbase-面">7.2 OceanBase 面</a></li><li style="padding-left:14px"><a href="#d1-7-3-os-面">7.3 OS 面</a></li><li style="padding-left:14px"><a href="#d1-7-4-时间同步">7.4 时间同步</a></li><li><a href="#d1-8-完全吸收-的判定标准">8. &quot;完全吸收&quot;的判定标准</a></li><li><a href="#d1-9-执行检查清单">9. 执行检查清单</a></li><li style="padding-left:14px"><a href="#d1-9-1-环境搭建">9.1 环境搭建</a></li><li style="padding-left:14px"><a href="#d1-9-2-每个场景执行">9.2 每个场景执行</a></li><li style="padding-left:14px"><a href="#d1-9-3-安全注意">9.3 安全注意</a></li><li><a href="#d1-10-已知风险与局限">10. 已知风险与局限</a></li></ul><div class="toc-head">脚本说明</div><ul><li><a href="#d2-目录">目录</a></li><li><a href="#d2-快速上手">快速上手</a></li><li style="padding-left:14px"><a href="#d2-1-环境准备">1. 环境准备</a></li><li style="padding-left:14px"><a href="#d2-2-若要做单盘注入-场景-s8-必须在建-lvm-之前">2. 若要做单盘注入(场景 S8) —— 必须在建 LVM 之前</a></li><li style="padding-left:14px"><a href="#d2-3-执行一轮场景">3. 执行一轮场景</a></li><li style="padding-left:14px"><a href="#d2-4-h1-h2-判定实验-最高优先级">4. H1 / H2 判定实验（最高优先级）</a></li><li><a href="#d2-安全机制">安全机制</a></li><li><a href="#d2-方法论局限-报告中必须声明">方法论局限（报告中必须声明）</a></li></ul></nav>
+<nav class="toc"><div class="toc-head">分析报告</div><ul><li><a href="#d0-摘要">摘要</a></li><li><a href="#d0-结论速览">结论速览</a></li><li><a href="#d0-0-证据等级规范">0. 证据等级规范</a></li><li><a href="#d0-1-背景">1. 背景</a></li><li><a href="#d0-2-客户环境现状">2. 客户环境现状</a></li><li style="padding-left:14px"><a href="#d0-2-1-计算与存储-现场">2.1 计算与存储 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-2-磁盘布局-现场">2.2 磁盘布局 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-3-集群拓扑-现场">2.3 集群拓扑 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-4-已正确配置的项-现场">2.4 已正确配置的项 [现场]</a></li><li><a href="#d0-3-核心分析-三条判定链路与超时层级">3. 核心分析：三条判定链路与超时层级</a></li><li style="padding-left:14px"><a href="#d0-3-1-超时层级全景">3.1 超时层级全景</a></li><li style="padding-left:14px"><a href="#d0-3-2-链路-a-数据盘故障判定">3.2 链路 A：数据盘故障判定</a></li><li style="padding-left:14px"><a href="#d0-3-3-链路-b-日志盘故障判定-最激进">3.3 链路 B：日志盘故障判定（最激进）</a></li><li style="padding-left:14px"><a href="#d0-3-3-1-源码修正-两种模式是-或-关系-不是-替换-关系">3.3.1 ⚠️ 源码修正：两种模式是「或」关系，不是「替换」关系</a></li><li style="padding-left:14px"><a href="#d0-3-3-2-判定结果如何变成切主">3.3.2 判定结果如何变成切主</a></li><li style="padding-left:14px"><a href="#d0-3-4-链路-c-palf-选举租约-硬编码-不可调">3.4 链路 C：PALF 选举租约（硬编码，不可调）</a></li><li style="padding-left:14px"><a href="#d0-3-5-现场日志逐条对照-现场">3.5 现场日志逐条对照 [现场]</a></li><li><a href="#d0-4-影响放大因素">4. 影响放大因素</a></li><li style="padding-left:14px"><a href="#d0-4-1-lvm-多盘条带化-现场">4.1 LVM 多盘条带化 [现场]</a></li><li style="padding-left:14px"><a href="#d0-4-2-leader-高度集中-现场">4.2 leader 高度集中 [现场]</a></li><li style="padding-left:14px"><a href="#d0-4-3-clog-卷水位偏高-现场">4.3 clog 卷水位偏高 [现场]</a></li><li><a href="#d0-5-关键结论-能否通过调参完全吸收">5. 关键结论：能否通过调参完全吸收</a></li><li style="padding-left:14px"><a href="#d0-5-1-结论-可以吸收到-60s-量级-触发路径不经过-palf-硬编码租约">5.1 结论：可以吸收到 60s 量级，触发路径不经过 PALF 硬编码租约</a></li><li style="padding-left:14px"><a href="#d0-5-2-完全吸收-的准确含义与边界">5.2 &quot;完全吸收&quot;的准确含义与边界</a></li><li style="padding-left:14px"><a href="#d0-5-3-已由源码与官方文档确定的结论">5.3 已由源码与官方文档确定的结论</a></li><li><a href="#d0-6-测试方案">6. 测试方案</a></li><li><a href="#d0-7-实测结果">7. 实测结果</a></li><li><a href="#d0-8-最佳实践配置清单">8. 最佳实践配置清单</a></li><li style="padding-left:14px"><a href="#d0-l1-os-内核-rocky-linux-9-8">L1 — OS / 内核（Rocky Linux 9.8）</a></li><li style="padding-left:14px"><a href="#d0-l2-存储布局">L2 — 存储布局</a></li><li style="padding-left:14px"><a href="#d0-l3-oceanbase-判定模型-关键层">L3 — OceanBase 判定模型（关键层）</a></li><li style="padding-left:14px"><a href="#d0-l4-缓冲与节流">L4 — 缓冲与节流</a></li><li style="padding-left:14px"><a href="#d0-l5-架构与接入层">L5 — 架构与接入层</a></li><li><a href="#d0-9-下一步行动">9. 下一步行动</a></li><li style="padding-left:14px"><a href="#d0-9-1-可立即执行-不需要测试环境">9.1 可立即执行（不需要测试环境）</a></li><li style="padding-left:14px"><a href="#d0-9-2-需要测试环境">9.2 需要测试环境</a></li><li><a href="#d0-10-附录-完整引用清单">10. 附录：完整引用清单</a></li><li style="padding-left:14px"><a href="#d0-官方文档">官方文档</a></li><li style="padding-left:14px"><a href="#d0-上游内核源码">上游内核源码</a></li><li style="padding-left:14px"><a href="#d0-源码">源码</a></li><li style="padding-left:14px"><a href="#d0-社区-非官方-仅作旁证">社区（非官方，仅作旁证）</a></li><li style="padding-left:14px"><a href="#d0-现场材料">现场材料</a></li></ul><div class="toc-head">测试执行方案</div><ul><li><a href="#d1-1-测试目标">1. 测试目标</a></li><li><a href="#d1-2-测试环境">2. 测试环境</a></li><li style="padding-left:14px"><a href="#d1-2-1-集群">2.1 集群</a></li><li style="padding-left:14px"><a href="#d1-2-2-磁盘两组对照">2.2 磁盘两组对照</a></li><li style="padding-left:14px"><a href="#d1-2-3-拓扑对照">2.3 拓扑对照</a></li><li style="padding-left:14px"><a href="#d1-2-4-负载">2.4 负载</a></li><li><a href="#d1-3-三个磁盘域独立测试">3. 三个磁盘域独立测试</a></li><li><a href="#d1-4-注入方法">4. 注入方法</a></li><li style="padding-left:14px"><a href="#d1-4-1-主手段-dmsetup-suspend-resume">4.1 主手段：dmsetup suspend/resume</a></li><li style="padding-left:14px"><a href="#d1-4-2-对照手段">4.2 对照手段</a></li><li style="padding-left:14px"><a href="#d1-4-3-注入粒度">4.3 注入粒度</a></li><li style="padding-left:14px"><a href="#d1-4-4-时长档位">4.4 时长档位</a></li><li><a href="#d1-5-场景矩阵">5. 场景矩阵</a></li><li style="padding-left:14px"><a href="#d1-5-1-tolerance_time-门槛标定实验-最高优先级">5.1 tolerance_time 门槛标定实验（最高优先级）</a></li><li><a href="#d1-6-分层调优与贡献度分析">6. 分层调优与贡献度分析</a></li><li style="padding-left:14px"><a href="#d1-6-1-执行顺序">6.1 执行顺序</a></li><li><a href="#d1-7-观测指标与采集">7. 观测指标与采集</a></li><li style="padding-left:14px"><a href="#d1-7-1-业务面">7.1 业务面</a></li><li style="padding-left:14px"><a href="#d1-7-2-oceanbase-面">7.2 OceanBase 面</a></li><li style="padding-left:14px"><a href="#d1-7-3-os-面">7.3 OS 面</a></li><li style="padding-left:14px"><a href="#d1-7-4-时间同步">7.4 时间同步</a></li><li><a href="#d1-8-完全吸收-的判定标准">8. &quot;完全吸收&quot;的判定标准</a></li><li><a href="#d1-9-执行检查清单">9. 执行检查清单</a></li><li style="padding-left:14px"><a href="#d1-9-1-环境搭建">9.1 环境搭建</a></li><li style="padding-left:14px"><a href="#d1-9-2-每个场景执行">9.2 每个场景执行</a></li><li style="padding-left:14px"><a href="#d1-9-3-安全注意">9.3 安全注意</a></li><li><a href="#d1-10-已知风险与局限">10. 已知风险与局限</a></li></ul><div class="toc-head">脚本说明</div><ul><li><a href="#d2-目录">目录</a></li><li><a href="#d2-快速上手">快速上手</a></li><li style="padding-left:14px"><a href="#d2-1-环境准备">1. 环境准备</a></li><li style="padding-left:14px"><a href="#d2-2-若要做单盘注入-场景-s8-必须在建-lvm-之前">2. 若要做单盘注入(场景 S8) —— 必须在建 LVM 之前</a></li><li style="padding-left:14px"><a href="#d2-3-执行一轮场景">3. 执行一轮场景</a></li><li style="padding-left:14px"><a href="#d2-4-tolerance_time-门槛标定实验-最高优先级">4. tolerance_time 门槛标定实验（最高优先级）</a></li><li><a href="#d2-安全机制">安全机制</a></li><li><a href="#d2-方法论局限-报告中必须声明">方法论局限（报告中必须声明）</a></li></ul></nav>
 <main>
 <header class="doc-head">
   <h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
   <div class="meta">
     OceanBase 4.3.5.5 &nbsp;·&nbsp; Azure Standard D32s v6 + Premium SSD v2
-    &nbsp;·&nbsp; 生成时间 2026-08-31 01:23
+    &nbsp;·&nbsp; 生成时间 2026-08-31 09:49
   </div>
 </header>
 <section class=""><h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
 <blockquote>
 <p><strong>文档状态</strong>：分析与方案部分已完成（源码级论证）；实测数据章节为待填模板。
-<strong>适用版本</strong>：OceanBase 4.3.5.5 / OBProxy 4.3.1.6 / Azure Standard D32s v6 + Premium SSD v2
-<strong>最后更新</strong>：2026-08-30</p>
+<strong>适用版本</strong>：OceanBase 4.3.5.5 / OBProxy 4.3.1.6 / Azure Standard D32s v6 + Premium SSD v2 / <strong>Rocky Linux 9.8</strong>
+<strong>最后更新</strong>：2026-08-31</p>
 </blockquote>
 <hr />
 <h2 id="d0-摘要">摘要</h2>
-<p>OceanBase 在云上块存储环境中对<strong>瞬时 I/O 高延迟事件</strong>的敏感度显著高于其他常见中间件。本文通过<strong>源码级</strong>分析定位到三条独立的故障判定链路，并给出可证伪的测试方案与最佳实践配置。</p>
-<p><strong>核心结论（分析阶段）</strong></p>
+<p>OceanBase 在云上块存储环境中对<strong>瞬时 I/O 高延迟事件</strong>的敏感度显著高于其他常见中间件。本文通过<strong>源码级</strong>分析定位故障判定链路，并给出可证伪的测试方案与最佳实践配置。</p>
+<p><strong>核心结论</strong></p>
 <ol>
 <li>
-<p><strong>根因是超时层级倒挂</strong>。Azure 官方要求 OS 侧 NVMe I/O 超时设为 <strong>240s</strong>，以便"Azure host 级超时与恢复机制优先处理磁盘故障或中断" <span class="badge b-official">官方</span>；而 OceanBase 默认在 <strong>5s</strong> 即判定磁盘故障 <span class="badge b-source">源码</span>。两者相差近两个数量级。</p>
+<p><strong>触发切主的门槛已被源码精确定位，不是估计值。</strong> 判定链路有且只有两条，门槛分别是<strong>日志盘 5s</strong>、<strong>数据盘 10s + 5s ≈ 15s</strong>（§3.2 / §3.3）。客户现场 14 次慢 I/O 的 <strong>p50 = 10.2s、max = 11.3s、14/14 全部超过 5s</strong>，<strong>必然击穿日志盘门槛</strong>。</p>
 </li>
 <li>
-<p><strong>最激进的一环是 <code>log_storage_warning_trigger_percentage = 0</code></strong>。该默认值的语义是：<strong>只要任意单个 I/O 的响应时间超过 5s，日志盘即被判定为故障</strong> —— 不是持续性能劣化，而是单次 I/O 事件 <span class="badge b-source">源码</span>。</p>
+<p><strong>两条链路的终点完全相同，都是切主。</strong> 二者都产出 <code>FailureLevel::FATAL</code> 事件，进入选举优先级比较的<strong>第一顺位故障项</strong> <code>compare_fatal_failures_</code>，导致本节点让出 leader <span class="badge b-source">源码</span>。</p>
+</li>
+<li>
+<p><strong>根因是超时层级倒挂。</strong> Azure 官方要求 OS 侧 NVMe I/O 超时设为 <strong>240s</strong>，以便"Azure host 级超时与恢复机制优先处理磁盘故障或中断" <span class="badge b-official">官方</span>；Linux 内核上游默认 <strong>30s</strong> <span class="badge b-source">源码</span>；而 OceanBase 默认 <strong>5s</strong> 即判故障。三层之间相差近两个数量级，<strong>最内层反而最敏感</strong>。</p>
+</li>
+<li>
+<p><strong>切主是"优先级降级后的主动让位"，不是"租约超时后的被动选举"。</strong> 这一点由源码判定：<code>ObFailureDetector</code> 每 100ms 刷新，FATAL 事件进入 election priority 比较。<strong>因此 PALF 硬编码的 4s 租约不是本案的触发因素</strong>，<code>*_tolerance_time</code> 才是（§5）。这直接回答了"能否通过调参吸收"——<strong>参数空间足够</strong>。</p>
+</li>
+<li>
+<p><strong>⚠️ 修正：<code>log_storage_warning_trigger_percentage</code> 必须保持默认值 <code>0</code>，调大适得其反。</strong> 源码显示"单次 I/O 超时"与"吞吐持续劣化"两条判定是 <strong><code>||</code>（或）关系而非替换关系</strong>：调大该参数<strong>不会豁免</strong>前者，只会<strong>额外新增</strong>两条判定路径，使检测<strong>更敏感</strong>（§3.3.1）。<strong>唯一能抬高日志盘门槛的参数是 <code>log_storage_warning_tolerance_time</code>。</strong></p>
+</li>
+<li>
+<p><strong>调大 <code>tolerance_time</code> 不会削弱对真实坏盘的检出能力。</strong> 源码中"返回 I/O 错误码"的判定路径（<code>fs_error_times &gt;= 10 → WARNING</code>、<code>&gt;= 100 → ERROR</code>）<strong>完全独立于 <code>tolerance_time</code></strong> <span class="badge b-source">源码</span>。即：放宽的只是"超时"判定，"报错"判定不受影响。这是本方案安全性的关键论据（§8）。</p>
 </li>
 <li>
 <p><strong>这解释了"为何只有 OB 敏感"</strong>。Redis / RocketMQ / ES / TiDB 不存在"秒级判定坏盘并主动发起选主"的探测器；它们在 I/O 停顿时仅表现为阻塞，停顿结束后自然恢复。</p>
-</li>
-<li>
-<p><strong>存在一个尚未定论的关键分歧点</strong>：切主可能由两条路径触发 —— 可调参的 failure detector（5s）或<strong>硬编码不可调的 PALF 选举租约（4s）</strong><span class="badge b-source">源码</span>。<strong>二者的区分决定了"能否通过调参完全吸收"的最终答案</strong>，必须由实测判定（见 §5.1）。</p>
-</li>
-<li>
-<p><strong>客户现网存在四个影响放大因素</strong>：LVM 多盘条带化、leader 高度集中于同一节点、自动均衡被关闭、clog 卷水位逼近回收阈值。</p>
 </li>
 <li>
 <p><strong>条带化在 D32s v6 上换不来性能</strong>。官方数据显示单块 PSSDv2 可 provision 到 80,000 IOPS / 2,000 MB/s，<strong>已超过 D32s v6 整机的 uncached 上限 66,667 IOPS / 1,984 MBps</strong> <span class="badge b-official">官方</span>。微软文档亦直言可"避免为满足需求而条带化磁盘的维护开销"。因此当前的 6 盘 / 4 盘条带只换来了 <strong>4~6 倍的抖动暴露面</strong>（§4.1.1）。</p>
@@ -137,8 +143,101 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 <blockquote>
 <p><strong>证据边界</strong>：客户提供的日志是按 <code>-4389</code> 过滤后的摘录，<strong>其中不含切主事件的直接记录</strong>。
 本文的因果链由<strong>源码路径</strong>与<strong>时间相关性</strong>建立，属高可信推断；
-要升级为现场直接证据，需补充 <code>DBA_OB_SERVER_EVENT_HISTORY</code> 与完整 observer/election 日志（见 §3.5 证据边界声明）。</p>
+要升级为现场直接证据，只需一条 SQL（见下方"结论速览 → 确证用 SQL"）。</p>
 </blockquote>
+<hr />
+<h2 id="d0-结论速览">结论速览</h2>
+<p><strong>客户四个问题的直接答复：</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>问题</th>
+<th>结论</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q1</td>
+<td>OB 在 Azure v6 上表现如何</td>
+<td><strong>无版本级不兼容</strong>。OB 4.3.5 官方支持 Rocky Linux 9 <span class="badge b-official">官方</span>；Rocky Linux 是 Azure 认可发行版 <span class="badge b-official">官方</span>。问题不在"能不能跑"，而在<strong>默认容错阈值与云盘延迟分布不匹配</strong></td>
+<td>A7 / A8</td>
+</tr>
+<tr>
+<td>Q2</td>
+<td>默认参数下抖动会造成什么影响</td>
+<td><strong>确定会切主</strong>。日志盘门槛 5s，数据盘门槛约 15s；现场 14/14 次慢 I/O 均 &gt; 5s（p50 10.2s）</td>
+<td>S3 / F1</td>
+</tr>
+<tr>
+<td>Q3</td>
+<td><strong>能否通过调参完全吸收</strong></td>
+<td><strong>可以吸收到 60s 量级，且不牺牲真实坏盘检出。</strong> 关键参数是两个 <code>*_tolerance_time</code>（上限均为 300s）。<strong>触发路径不经过 PALF 4s 硬编码租约</strong>，故不存在"调不动的天花板"</td>
+<td>S3 / S7</td>
+</tr>
+<tr>
+<td>Q4</td>
+<td>最佳实践配置</td>
+<td>见 §8。<strong>最小改动集</strong>为下方 4 条</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>最小改动集（按收益/风险排序）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>顺序</th>
+<th>层</th>
+<th>动作</th>
+<th>需重启</th>
+<th>风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>OS</td>
+<td><code>nvme_core.io_timeout=240</code>（对齐 Azure 官方值）</td>
+<td>是</td>
+<td>极低</td>
+</tr>
+<tr>
+<td>2</td>
+<td>OB</td>
+<td><code>log_storage_warning_tolerance_time</code> 5s → <strong>60s</strong></td>
+<td>否</td>
+<td>低</td>
+</tr>
+<tr>
+<td>3</td>
+<td>OB</td>
+<td><code>data_storage_warning_tolerance_time</code> 5s → <strong>60s</strong></td>
+<td>否</td>
+<td>低</td>
+</tr>
+<tr>
+<td>4</td>
+<td>OB</td>
+<td><code>log_storage_warning_trigger_percentage</code> <strong>保持 0（不要动）</strong></td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>不要做</strong>：调大 <code>log_storage_warning_trigger_percentage</code>（会让检测更敏感）；调大 <code>data_storage_error_tolerance_time</code>（300s 是真实坏盘的兜底线，应保留）。</p>
+</blockquote>
+<p><strong>确证用 SQL</strong> —— 一条查询即可判定当时是否真的发生了磁盘故障判定。源码中 <code>ObFailureDetector</code> 的每一次判定都会写入 <code>__all_server_event_history</code> <span class="badge b-source">源码</span>：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">SELECT</span><span style="color: #BBB"> </span>gmt_create,<span style="color: #BBB"> </span>svr_ip,<span style="color: #BBB"> </span>module,<span style="color: #BBB"> </span>event,<span style="color: #BBB"> </span>name1,<span style="color: #BBB"> </span>value1,<span style="color: #BBB"> </span>name2,<span style="color: #BBB"> </span>value2
+<span style="color: #007020; font-weight: bold">FROM</span><span style="color: #BBB"> </span>oceanbase.DBA_OB_SERVER_EVENT_HISTORY
+<span style="color: #007020; font-weight: bold">WHERE</span><span style="color: #BBB"> </span>module<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'FAILURE_DETECTOR'</span>
+<span style="color: #BBB">  </span><span style="color: #007020; font-weight: bold">AND</span><span style="color: #BBB"> </span>gmt_create<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">BETWEEN</span><span style="color: #BBB"> </span><span style="color: #4070A0">'2026-07-20 15:00:00'</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">AND</span><span style="color: #BBB"> </span><span style="color: #4070A0">'2026-07-20 15:10:00'</span>
+<span style="color: #007020; font-weight: bold">ORDER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">BY</span><span style="color: #BBB"> </span>gmt_create;
+</code></pre></div>
+
+<p>若返回 <code>FAILURE_MODULE = LOG</code> / <code>FAILURE_TYPE = PROCESS_HANG</code> 的记录，即为切主原因的<strong>直接证据</strong>。</p>
 <hr />
 <h2 id="d0-0-证据等级规范">0. 证据等级规范</h2>
 <p>本文<strong>每一条事实性陈述</strong>均标注证据等级，不做无出处断言。</p>
@@ -221,6 +320,10 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 <td><strong>NVMe</strong>（<code>MSFT NVMe Accelerator v1.0</code>）</td>
 </tr>
 <tr>
+<td>操作系统</td>
+<td><strong>Rocky Linux 9.8</strong>（RHEL 9.8 下游，2026-05-27 GA）<span class="badge b-official">官方</span></td>
+</tr>
+<tr>
 <td>OB 版本</td>
 <td>4.3.5.5</td>
 </tr>
@@ -231,6 +334,12 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </tbody>
 </table>
 <p>该规格的官方远程存储上限 <span class="badge b-official">官方</span>（详见 §4.1.1）：uncached <strong>66,667 IOPS / 1,984 MBps</strong>，最大 64 块远程盘，<strong>无本地临时盘</strong>。</p>
+<p><strong>操作系统侧的三条官方事实</strong> <span class="badge b-official">官方</span>：</p>
+<ol>
+<li><strong>Rocky Linux 9 在 OceanBase 4.3.5 官方支持矩阵内</strong>（x86_64 / ARM_64），不存在版本级不兼容。</li>
+<li><strong>Rocky Linux 是 Azure 认可（endorsed）的发行版</strong>，经 CIQ 发布，<em>"Microsoft CSS provides commercially reasonable support for these images."</em></li>
+<li><strong>但 Azure <code>enable-nvme-interface</code> 页面列出的 NVMe 支持镜像清单中，Rocky 分支只到 8.10 / 9.6，未包含 9.8。</strong> 该页面同时说明"某些较旧的操作系统镜像默认超时为 30 秒"。因此 <strong><code>nvme_core.io_timeout</code> 的实际生效值必须现场确认，不能假定为 240</strong>（§8 L1）。</li>
+</ol>
 <h3 id="d0-2-2-磁盘布局-现场">2.2 磁盘布局 <span class="badge b-field">现场</span></h3>
 <table>
 <thead>
@@ -326,10 +435,10 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </tr>
 <tr>
 <td>2</td>
-<td>旧镜像 <code>nvme_core.io_timeout</code> 默认</td>
-<td>30s</td>
+<td>Linux 内核上游 <code>nvme_core.io_timeout</code> 默认</td>
+<td><strong>30s</strong></td>
 <td>是</td>
-<td><span class="badge b-official">官方</span></td>
+<td><span class="badge b-source">源码</span></td>
 </tr>
 <tr>
 <td>3</td>
@@ -348,7 +457,7 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 <tr>
 <td>5</td>
 <td>OB <code>log_storage_warning_tolerance_time</code></td>
-<td><strong>5s</strong></td>
+<td><strong>5s</strong> ← <strong>最敏感</strong></td>
 <td>是 [1s,300s]</td>
 <td><span class="badge b-source">源码</span></td>
 </tr>
@@ -361,19 +470,25 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </tr>
 <tr>
 <td>7</td>
-<td><strong>PALF 选举租约</strong></td>
-<td><strong>4s</strong></td>
-<td><strong>否（硬编码）</strong></td>
+<td>PALF 选举租约（<strong>本案不触发</strong>，见 §5.1）</td>
+<td>4s</td>
+<td>否（硬编码）</td>
 <td><span class="badge b-source">源码</span></td>
 </tr>
 </tbody>
 </table>
+<p>内核上游默认值 <span class="badge b-source">源码</span>，<code>drivers/nvme/host/core.c</code>：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #902000">unsigned</span><span style="color: #BBB"> </span><span style="color: #902000">int</span><span style="color: #BBB"> </span>nvme_io_timeout<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #40A070">30</span>;
+module_param_named(io_timeout,<span style="color: #BBB"> </span>nvme_io_timeout,<span style="color: #BBB"> </span>uint,<span style="color: #BBB"> </span><span style="color: #40A070">0644</span>);
+MODULE_PARM_DESC(io_timeout,<span style="color: #BBB"> </span><span style="color: #4070A0">"timeout in seconds for I/O"</span>);
+</code></pre></div>
+
 <p><strong>Microsoft Learn 官方原文</strong> <span class="badge b-official">官方</span>：</p>
 <blockquote>
 <p>"For virtual machines using NVMe-attached storage, the default OS-level NVMe IO timeout for both Linux and Windows is now <strong>240 seconds</strong>. This change ensures that <strong>Azure's host-level timeout and recovery mechanisms take precedence in handling disk failures or interruptions.</strong> On Linux, this timeout corresponds to the kernel parameter <code>nvme_core.io_timeout</code> set to 240 seconds. ... Some older operating system images have the default timeout values set to 30 seconds. <strong>This setting can cause the OS to timeout IOs before Azure can intervene.</strong>"</p>
 <p>— <a href="https://learn.microsoft.com/azure/virtual-machines/enable-nvme-interface">https://learn.microsoft.com/azure/virtual-machines/enable-nvme-interface</a></p>
 </blockquote>
-<p><strong>这是本文最重要的官方依据</strong>：平台的设计前提是"OS 层应当等待足够长的时间，让平台侧的恢复机制先行处理"。而 OceanBase 默认在 5s 即做出终局判定。</p>
+<p><strong>这是本文最重要的官方依据</strong>：平台的设计前提是"OS 层应当等待足够长的时间，让平台侧的恢复机制先行处理"。而 OceanBase 默认在 <strong>5s</strong> 即做出终局判定 —— 比平台建议值小 <strong>48 倍</strong>，比内核上游默认值还小 6 倍。<strong>整个超时层级是倒挂的：越靠近应用层，容忍度反而越低。</strong></p>
 <h3 id="d0-3-2-链路-a-数据盘故障判定">3.2 链路 A：数据盘故障判定</h3>
 <p>源码 <code>src/share/parameter/ob_parameter_seed.ipp</code> <span class="badge b-source">源码</span>：</p>
 <div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>DEF_TIME(_data_storage_io_timeout,<span style="color: #BBB"> </span>OB_CLUSTER_PARAMETER,<span style="color: #BBB"> </span><span style="color: #4070A0">"10s"</span>,<span style="color: #BBB"> </span><span style="color: #4070A0">"[1s,600s]"</span>,
@@ -389,27 +504,87 @@ DEF_TIME_WITH_CHECKER(data_storage_error_tolerance_time,<span style="color: #BBB
 <span style="color: #BBB">        </span>common<span style="color: #666">::</span>ObDataStorageErrorToleranceTimeChecker,<span style="color: #BBB"> </span><span style="color: #4070A0">"[10s,7200s]"</span>,<span style="color: #BBB"> </span>...);
 </code></pre></div>
 
-<p>判定链：</p>
-<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>单个 I/O 超过 10s (_data_storage_io_timeout)
-        │  记为 I/O 失败
+<p>判定链（<strong>已由源码逐行核实</strong>，<code>src/share/io/ob_io_struct.cpp</code> <span class="badge b-source">源码</span>）：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>单个 [读] I/O 超过 10s (_data_storage_io_timeout)
+        │  ObIOFaultDetector::record_io_timeout() → 推入 RetryTask
+        │  ⚠️ 仅 read 触发；write 分支直接返回 OB_NOT_SUPPORTED
         ▼
-持续失败超过 5s (data_storage_warning_tolerance_time)
-        │
+探测线程循环重试 detect_read()，指数退避
+        │  handle_retry_task_():
+        │    warn_ts  = diagnose_begin_ts + data_storage_warning_tolerance_time   (5s)
+        │    error_ts = diagnose_begin_ts + data_storage_error_tolerance_time   (300s)
         ▼
-数据盘状态 = WARNING  ──►  触发切主等事件
-        │
-        │  持续失败超过 300s (data_storage_error_tolerance_time)
+重试窗口内始终未成功，current_ts &gt;= warn_ts
+        │  set_device_warning()  →  DEVICE_HEALTH_WARNING
         ▼
-数据盘状态 = ERROR    ──►  触发停机等事件
+ObFailureDetector::detect_data_disk_io_failure_()
+        │  发现 status != DEVICE_HEALTH_NORMAL
+        │  → FailureEvent(PROCESS_HANG, STORAGE, FailureLevel::FATAL)
+        ▼
+       切主
 </code></pre></div>
 
+<p><strong>由此得到数据盘的精确门槛：</strong></p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>参数</th>
+<th>默认</th>
+<th>累计</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单次读 I/O 判超时</td>
+<td><code>_data_storage_io_timeout</code></td>
+<td>10s</td>
+<td>10s</td>
+</tr>
+<tr>
+<td>重试探测窗口</td>
+<td><code>data_storage_warning_tolerance_time</code></td>
+<td>5s</td>
+<td><strong>≈ 15s → 切主</strong></td>
+</tr>
+<tr>
+<td>升级为 ERROR</td>
+<td><code>data_storage_error_tolerance_time</code></td>
+<td>300s</td>
+<td>≈ 310s → 停机</td>
+</tr>
+</tbody>
+</table>
+<p><strong>四条源码级要点：</strong></p>
+<ol>
+<li>
+<p><strong>只有「读」会触发数据盘故障判定。</strong> <code>record_io_timeout()</code> / <code>record_io_error()</code> 中 <code>result.flag_.is_write()</code> 分支直接 <code>ret = OB_NOT_SUPPORTED</code> <span class="badge b-source">源码</span>。写超时不进入这条链路。</p>
+</li>
+<li>
+<p><strong>WARNING 与 ERROR 都会产生 FATAL 事件。</strong> <code>detect_data_disk_io_failure_()</code> 的判断是 <code>!= DEVICE_HEALTH_NORMAL</code>，并不区分两级 <span class="badge b-source">源码</span>。即 WARNING 就足以切主。</p>
+</li>
+<li>
+<p><strong>WARNING 状态有最短保持期。</strong> <code>get_device_health_status()</code> 中清除 WARNING 需要 <code>period &gt; read_failure_black_list_interval_</code>，该值在 <code>ObIOConfig</code> 中默认 <strong>60s</strong> <span class="badge b-source">源码</span>。<strong>即一次 15s 的读停顿，会让该节点在优先级比较中"带伤"至少 60s。</strong></p>
+</li>
+<li>
+<p><strong>返回错误码的真实坏盘走独立快速通道，不受 <code>tolerance_time</code> 影响：</strong>
+   <code>cpp
+   if (current_ts &gt;= error_ts || (sys_io_errno != 0 &amp;&amp; fs_error_times &gt;= MAX_DETECT_READ_ERROR_TIMES)) {
+     set_device_error();
+   } else if (current_ts &gt;= warn_ts || (sys_io_errno != 0 &amp;&amp; fs_error_times &gt;= MAX_DETECT_READ_WARN_TIMES)) {
+     set_device_warning();
+   }</code>
+   <code>MAX_DETECT_READ_WARN_TIMES = 10</code>、<code>MAX_DETECT_READ_ERROR_TIMES = 100</code>（<code>src/share/io/ob_io_define.h</code>）<span class="badge b-source">源码</span>。
+   <strong>这是"调大 tolerance_time 不会导致真实坏盘漏检"的直接源码证据</strong>：<code>sys_io_errno != 0</code> 这一支与时间阈值是 <code>||</code> 关系。</p>
+</li>
+</ol>
 <p>OceanBase 官方文档对两个状态的描述 <span class="badge b-official">官方</span>：</p>
 <ul>
 <li><code>data_storage_warning_tolerance_time</code>：<em>"探测线程会将该数据盘状态设置为 <code>WARNING</code>，该状态会</em><em>触发切主</em><em>等事件以正常服务业务请求。"</em></li>
 <li><code>data_storage_error_tolerance_time</code>：<em>"探测线程会将该数据盘状态设置为 <code>ERROR</code>，该状态会</em><em>触发停机</em><em>等事件以避免向该节点发送的请求失败。"</em></li>
 </ul>
 <blockquote>
-<p><strong>对于 10~30s 量级的瞬时停顿</strong>：会跨过 WARNING（5s），但<strong>不会</strong>达到 ERROR（300s）。即数据盘链路可能导致切主，但不会导致节点停机。</p>
+<p><strong>对于 10~30s 量级的瞬时停顿</strong>：会跨过 WARNING（≈15s），但<strong>不会</strong>达到 ERROR（≈310s）。即数据盘链路可能导致切主，但不会导致节点停机。</p>
 </blockquote>
 <p><strong>三个参数均为 <code>DYNAMIC_EFFECTIVE</code>，无需重启 OBServer 即可在线生效</strong> <span class="badge b-source">源码</span>。</p>
 <h3 id="d0-3-3-链路-b-日志盘故障判定-最激进">3.3 链路 B：日志盘故障判定（最激进）</h3>
@@ -425,35 +600,129 @@ DEF_INT(log_storage_warning_trigger_percentage,<span style="color: #BBB"> </span
 <span style="color: #BBB">  </span><span style="color: #4070A0">"and performance degradation has been ongoing for log_storage_warning_tolerance_time seconds."</span>);
 </code></pre></div>
 
-<p><strong>这是全文最关键的一段代码。</strong> 参数语义分两种模式：</p>
+<p><strong>参数文档描述的两种模式：</strong></p>
 <table>
 <thead>
 <tr>
 <th><code>log_storage_warning_trigger_percentage</code></th>
-<th>判定模型</th>
+<th>文档描述的判定模型</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong><code>0</code>（默认）</strong></td>
-<td><strong>任意单个 I/O 的 RT 超过 <code>log_storage_warning_tolerance_time</code>（5s）→ 立即判定日志盘故障</strong></td>
+<td>任意单个 I/O 的 RT 超过 <code>log_storage_warning_tolerance_time</code>（5s）→ 判定日志盘故障</td>
 </tr>
 <tr>
 <td><code>&gt; 0</code></td>
-<td>当前吞吐 &lt; 正常吞吐 × N% <strong>且持续劣化达 <code>log_storage_warning_tolerance_time</code> 秒</strong> → 才判定故障</td>
+<td>当前吞吐 &lt; 正常吞吐 × N% <strong>且持续劣化达 <code>log_storage_warning_tolerance_time</code> 秒</strong> → 判定故障</td>
 </tr>
 </tbody>
 </table>
-<p>消费方为 <code>src/logservice/leader_coordinator/ob_failure_detector.cpp</code> <span class="badge b-source">源码</span>：</p>
+<h3 id="d0-3-3-1-源码修正-两种模式是-或-关系-不是-替换-关系">3.3.1 ⚠️ 源码修正：两种模式是「或」关系，不是「替换」关系</h3>
+<p>参数文档的措辞（"<code>If the value is greater than 0, which means ... only if ...</code>"）<strong>极易被误读为"调大该参数就能改用更宽松的判定模型"</strong>。核查消费方源码后可以确认，<strong>事实并非如此</strong>。</p>
+<p>消费方 <code>src/logservice/leader_coordinator/ob_failure_detector.cpp</code> → <code>PalfDiskHangDetector::is_clog_disk_hang()</code> <span class="badge b-source">源码</span>：</p>
 <div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">const</span><span style="color: #BBB"> </span><span style="color: #902000">int64_t</span><span style="color: #BBB"> </span>tolerance_time<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span>GCONF.log_storage_warning_tolerance_time;
 sensitivity<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span>GCONF.log_storage_warning_trigger_percentage;
+...
+<span style="color: #007020; font-weight: bold">const</span><span style="color: #BBB"> </span><span style="color: #902000">double</span><span style="color: #BBB"> </span>bw_error_ratio<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span>MIN(<span style="color: #40A070">0.5</span>,<span style="color: #BBB"> </span><span style="color: #40A070">0.01</span><span style="color: #BBB"> </span><span style="color: #666">*</span><span style="color: #BBB"> </span>sensitivity);
+...
+<span style="color: #60A0B0; font-style: italic">// 路径①：IO worker 长时间没有推进</span>
+<span style="color: #007020; font-weight: bold">const</span><span style="color: #BBB"> </span><span style="color: #902000">bool</span><span style="color: #BBB"> </span>has_long_pending_io<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span>(OB_INVALID_TIMESTAMP<span style="color: #BBB"> </span><span style="color: #666">!=</span><span style="color: #BBB"> </span>last_working_time
+<span style="color: #BBB">    </span><span style="color: #666">&amp;&amp;</span><span style="color: #BBB"> </span>now<span style="color: #BBB"> </span><span style="color: #666">-</span><span style="color: #BBB"> </span>last_working_time<span style="color: #BBB"> </span><span style="color: #666">&gt;</span><span style="color: #BBB"> </span>tolerance_time);
+...
+<span style="color: #007020; font-weight: bold">if</span><span style="color: #BBB"> </span>(<span style="color: #007020">false</span><span style="color: #BBB"> </span><span style="color: #666">==</span><span style="color: #BBB"> </span>has_failure)<span style="color: #BBB"> </span>{
+<span style="color: #BBB">  </span><span style="color: #007020; font-weight: bold">if</span><span style="color: #BBB"> </span>(((has_small_pending_io<span style="color: #BBB"> </span><span style="color: #666">||</span><span style="color: #BBB"> </span>is_perf_decrease_error)<span style="color: #BBB"> </span><span style="color: #666">&amp;&amp;</span><span style="color: #BBB"> </span>has_continuous_error)<span style="color: #BBB"> </span><span style="color: #666">||</span>
+<span style="color: #BBB">      </span>has_long_pending_io)<span style="color: #BBB"> </span>{<span style="color: #BBB">          </span><span style="color: #60A0B0; font-style: italic">// ← 注意这里是 ||</span>
+<span style="color: #BBB">    </span>bool_ret<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #007020">true</span>;<span style="color: #BBB">                   </span><span style="color: #60A0B0; font-style: italic">// 判定 clog 盘 hang</span>
+<span style="color: #BBB">    </span>last_detect_failure_time_<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span>now;
+<span style="color: #BBB">  </span>}
+}
 </code></pre></div>
 
-<p>该文件位于 <strong><code>leader_coordinator</code>（主选举协调器）</strong> 目录下，即这一判定<strong>直接进入切主决策路径</strong>。</p>
-<p><strong>结论</strong>：默认配置下，日志盘只需经历<strong>一次</strong>超过 5s 的 I/O，即被判定为故障并进入切主流程。对于任何共享式 / 网络化块存储，这都是一个极易被触发的条件。</p>
+<p><strong>三点决定性推论：</strong></p>
+<ol>
+<li>
+<p><strong><code>has_long_pending_io</code> 是一个独立的 <code>||</code> 分支</strong>。它只依赖 <code>tolerance_time</code>，<strong>完全不受 <code>sensitivity</code>（即 <code>trigger_percentage</code>）影响</strong>。无论该参数取 0 还是 50，这条路径始终生效。</p>
+</li>
+<li>
+<p><strong><code>sensitivity = 0</code> 时，另外两条路径恒为 false</strong>。因为 <code>bw_error_ratio = MIN(0.5, 0.01 × 0) = 0</code>，判定条件 <code>learn_avg_bw_[i] * 0 &gt; this_avg_bw</code> 对任何非负吞吐都不成立。这与官方文档"默认值 0 意味着只由 IO RT 判定"的描述一致。</p>
+</li>
+<li>
+<p><strong>因此把 <code>trigger_percentage</code> 调大 = 在保留原有路径的基础上再增加两条判定路径 = 检测变得更敏感，而非更宽松。</strong></p>
+</li>
+</ol>
+<p><strong>结论（本文的核心修正）：</strong></p>
+<blockquote>
+<p><strong>唯一能抬高日志盘判定门槛的参数是 <code>log_storage_warning_tolerance_time</code>（默认 5s，可调至 300s）。</strong>
+<strong><code>log_storage_warning_trigger_percentage</code> 应保持默认值 <code>0</code>。</strong></p>
+</blockquote>
+<p><strong>其余相关常量</strong>（<code>ob_failure_detector.h</code>）<span class="badge b-source">源码</span>：</p>
+<table>
+<thead>
+<tr>
+<th>常量</th>
+<th>值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PALF_DISK_DETECT_INTERVAL_US</code></td>
+<td><strong>1s</strong></td>
+<td>日志盘检测采样周期</td>
+</tr>
+<tr>
+<td><code>MIN_RECOVERY_INTERVAL</code></td>
+<td><strong>30s</strong></td>
+<td>故障态最短恢复观察窗口</td>
+</tr>
+<tr>
+<td><code>PALF_DISK_FAILURE_TIME_UPPER_BOUND</code></td>
+<td><strong>30min</strong></td>
+<td>故障态强制超时解除</td>
+</tr>
+<tr>
+<td>failure detect 定时器周期</td>
+<td><strong>100ms</strong></td>
+<td><code>mtl_start()</code> 中 <code>schedule_task_repeat(..., 100_ms, ...)</code></td>
+</tr>
+<tr>
+<td>recovery detect 定时器周期</td>
+<td><strong>1s</strong></td>
+<td>同上</td>
+</tr>
+</tbody>
+</table>
+<p><strong>结论</strong>：默认配置下，日志盘 I/O worker 只要<strong>连续 5s 没有推进</strong>，即被判定为故障并进入切主流程。对任何网络化块存储，这都是一个极易被触发的条件。</p>
 <blockquote>
 <p>OceanBase 官方仓库自带磁盘 hang 的集成测试用例 <code>mittest/logservice/test_ob_simple_log_disk_hang.cpp</code>，其中显式对该参数取 <code>0</code> 与 <code>5</code> 做对照验证 <span class="badge b-source">源码</span>，可直接作为本次测试方法论的参考基准。</p>
 </blockquote>
+<h3 id="d0-3-3-2-判定结果如何变成切主">3.3.2 判定结果如何变成切主</h3>
+<p><code>detect_palf_hang_failure_()</code> 在判定 hang 后构造的事件是 <span class="badge b-source">源码</span>：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>FailureEvent<span style="color: #BBB"> </span><span style="color: #06287E">clog_disk_hang_event</span>(FailureType<span style="color: #666">::</span>PROCESS_HANG,
+<span style="color: #BBB">                                  </span>FailureModule<span style="color: #666">::</span>LOG,
+<span style="color: #BBB">                                  </span>FailureLevel<span style="color: #666">::</span>FATAL);<span style="color: #BBB">   </span><span style="color: #60A0B0; font-style: italic">// ← FATAL</span>
+...
+add_failure_event(clog_disk_hang_event);
+LOG_DBA_ERROR(OB_DISK_HUNG,<span style="color: #BBB"> </span><span style="color: #4070A0">"msg"</span>,<span style="color: #BBB"> </span><span style="color: #4070A0">"clog disk may be hung, add failure event"</span>,<span style="color: #BBB"> </span>...);
+</code></pre></div>
+
+<p>该 FATAL 事件被选举优先级 <code>PriorityV1::refresh_()</code> 读取 <span class="badge b-source">源码</span>：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>detector<span style="color: #666">-&gt;</span>get_specified_level_event(FailureLevel<span style="color: #666">::</span>FATAL,<span style="color: #BBB"> </span>fatal_failures_);
+</code></pre></div>
+
+<p>而 <code>PriorityV1::compare()</code> 的比较顺序为 <span class="badge b-source">源码</span>：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>compare_observer_stopped_<span style="color: #BBB">   </span><span style="color: #60A0B0; font-style: italic">// kill -15 导致 observer stop</span>
+compare_server_stopped_flag_
+compare_zone_stopped_flag_
+compare_fatal_failures_<span style="color: #BBB">     </span><span style="color: #60A0B0; font-style: italic">// ← 比较致命的异常（第 4 顺位，但是第 1 个"故障类"判据）</span>
+compare_scn_<span style="color: #BBB">                </span><span style="color: #60A0B0; font-style: italic">// 避免切换至回放位点过小的副本</span>
+...
+</code></pre></div>
+
+<p>前三项都是<strong>人为运维操作</strong>（stop server / stop zone）。因此 <strong><code>fatal_failures_</code> 是优先级比较中排序最高的"故障类"判据</strong> —— 一旦本节点持有 FATAL 事件而其他副本没有，本节点在优先级比较中必然落败，leader 被切走。</p>
+<p><strong>这条链路是"主动让位"，与 PALF 选举租约到期的"被动选举"是两套独立机制</strong>（见 §5）。</p>
 <h3 id="d0-3-4-链路-c-palf-选举租约-硬编码-不可调">3.4 链路 C：PALF 选举租约（硬编码，不可调）</h3>
 <p>源码 <code>src/logservice/palf/election/utils/election_common_define.h</code> <span class="badge b-source">源码</span>：</p>
 <div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">constexpr</span><span style="color: #BBB"> </span><span style="color: #902000">int64_t</span><span style="color: #BBB"> </span>MAX_LEASE_TIME<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #40A070">10</span>_s;
@@ -642,6 +911,38 @@ sensitivity<span style="color: #BBB"> </span><span style="color: #666">=</span><
   2. 该时间窗的<strong>完整 <code>observer.log</code> 与 <code>election.log</code></strong>（不做过滤）；
   3. 三个节点（46 / 47 / 41）的日志，而非仅 46。</li>
 </ul>
+<p><strong>第 1 项一条 SQL 即可确证</strong>——源码中 failure detector 的每一次状态变更都会调用
+<code>SERVER_EVENT_ADD("FAILURE_DETECTOR", ...)</code> 写入 <code>__all_server_event_history</code> <span class="badge b-source">源码</span>：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">SELECT</span><span style="color: #BBB"> </span>gmt_create,<span style="color: #BBB"> </span>svr_ip,<span style="color: #BBB"> </span>module,<span style="color: #BBB"> </span>event,<span style="color: #BBB"> </span>name1,<span style="color: #BBB"> </span>value1,<span style="color: #BBB"> </span>name2,<span style="color: #BBB"> </span>value2,<span style="color: #BBB"> </span>name3,<span style="color: #BBB"> </span>value3
+<span style="color: #007020; font-weight: bold">FROM</span><span style="color: #BBB">   </span>oceanbase.DBA_OB_SERVER_EVENT_HISTORY
+<span style="color: #007020; font-weight: bold">WHERE</span><span style="color: #BBB">  </span>module<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'FAILURE_DETECTOR'</span>
+<span style="color: #BBB">  </span><span style="color: #007020; font-weight: bold">AND</span><span style="color: #BBB">  </span>gmt_create<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">BETWEEN</span><span style="color: #BBB"> </span><span style="color: #4070A0">'2026-07-20 15:00:00'</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">AND</span><span style="color: #BBB"> </span><span style="color: #4070A0">'2026-07-20 15:10:00'</span>
+<span style="color: #007020; font-weight: bold">ORDER</span><span style="color: #BBB">  </span><span style="color: #007020; font-weight: bold">BY</span><span style="color: #BBB"> </span>gmt_create;
+</code></pre></div>
+
+<p>判读方式：</p>
+<table>
+<thead>
+<tr>
+<th>返回结果</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>有 <code>FAILURE_MODULE = LOG</code> 且 <code>FAILURE_TYPE = PROCESS_HANG</code> 的记录</td>
+<td>日志盘链路（§3.3）被触发 —— 因果链得到现场直接证据</td>
+</tr>
+<tr>
+<td>有 <code>FAILURE_MODULE = STORAGE</code> 的记录</td>
+<td>数据盘链路（§3.2）被触发</td>
+</tr>
+<tr>
+<td>无任何记录</td>
+<td>failure detector 未触发，切主另有原因，本文因果链需重新评估</td>
+</tr>
+</tbody>
+</table>
 <p>在补齐上述材料前，本文对现场事件的表述一律限定为"观测到 6~11s 的存储 I/O 停顿"，
 不直接断言"该停顿导致了那一次 failover"。</p>
 <p><strong>停顿位置的判定</strong>：日志中 <code>submit_used</code> 与 <code>return_used</code> <strong>两侧均出现 10s+ 的耗时</strong>：</p>
@@ -661,24 +962,29 @@ sensitivity<span style="color: #BBB"> </span><span style="color: #666">=</span><
 </thead>
 <tbody>
 <tr>
-<td>PALF 有效容忍窗口（租约 4s − 水位线 1s）</td>
-<td>~3s</td>
-<td>✅ 已跨过</td>
+<td><code>log_storage_warning_tolerance_time</code>（<strong>日志盘判故障→切主</strong>）</td>
+<td>5s</td>
+<td>✅ <strong>14 / 14 全部跨过</strong></td>
 </tr>
 <tr>
-<td>PALF 选举租约</td>
-<td>4s</td>
-<td>✅ 已跨过</td>
-</tr>
-<tr>
-<td><code>log/data_storage_warning_tolerance_time</code></td>
+<td><code>data_storage_warning_tolerance_time</code></td>
 <td>5s</td>
 <td>✅ 已跨过</td>
 </tr>
 <tr>
-<td><code>_data_storage_io_timeout</code></td>
+<td><code>_data_storage_io_timeout</code>（数据盘计时起点）</td>
 <td>10s</td>
-<td>✅ 部分跨过</td>
+<td>✅ 10 / 14 跨过</td>
+</tr>
+<tr>
+<td>数据盘 WARNING 总门槛（10s + 5s）</td>
+<td>~15s</td>
+<td>⚠️ 单次未达，但两波间隔 27s 内叠加则可能达到</td>
+</tr>
+<tr>
+<td>PALF 选举租约（<strong>本案不触发</strong>，见 §5.1）</td>
+<td>4s</td>
+<td>（形式上跨过，但该路径依赖 RPC 心跳而非磁盘，抖动期间网络正常）</td>
 </tr>
 <tr>
 <td><code>data_storage_error_tolerance_time</code></td>
@@ -841,63 +1147,130 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 <p>两者叠加，提高了在抖动窗口内命中慢 I/O 的概率。</p>
 <hr />
 <h2 id="d0-5-关键结论-能否通过调参完全吸收">5. 关键结论：能否通过调参完全吸收</h2>
-<h3 id="d0-5-1-核心可证伪假设-必须由实测判定">5.1 核心可证伪假设（必须由实测判定）</h3>
-<p>切主存在<strong>两条独立触发路径</strong>，二者的默认阈值极为接近（4s vs 5s），但<strong>可调性截然相反</strong>：</p>
+<h3 id="d0-5-1-结论-可以吸收到-60s-量级-触发路径不经过-palf-硬编码租约">5.1 结论：可以吸收到 60s 量级，触发路径不经过 PALF 硬编码租约</h3>
+<p>切主存在<strong>两条机制截然不同的路径</strong>：</p>
 <table>
 <thead>
 <tr>
 <th>路径</th>
+<th>机制</th>
 <th>阈值</th>
 <th>可调性</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>B. failure detector</strong>（<code>log_storage_warning_*</code>）</td>
-<td>5s</td>
-<td><strong>可调至 300s，且可切换判定模型</strong></td>
+<td><strong>① Failure detector → 优先级降级 → 主动让位</strong></td>
+<td>存储故障判定</td>
+<td>日志盘 <strong>5s</strong> / 数据盘 <strong>≈15s</strong></td>
+<td><strong>可调至 300s</strong></td>
 </tr>
 <tr>
-<td><strong>C. PALF 选举租约</strong></td>
+<td><strong>② PALF 选举租约到期 → 被动重新选举</strong></td>
+<td>副本间 RPC 心跳</td>
 <td>有效 ≈3s / 租约 4s</td>
-<td><strong>硬编码，不可调</strong></td>
+<td>硬编码，不可调</td>
 </tr>
 </tbody>
 </table>
-<p><strong>关键问题</strong>：PALF 的租约续约依赖副本间的 RPC 消息交换，而非磁盘 I/O。因此存在两种可能：</p>
-<ul>
-<li><strong>假设 H1</strong>：续约线程独立于磁盘 I/O。磁盘 hang 时网络仍正常，follower 正常回复续约消息 → 租约不会过期 → 切主<strong>仅</strong>由 failure detector 触发 → <strong>调参可完全吸收</strong>。</li>
-<li><strong>假设 H2</strong>：续约路径在某处依赖磁盘 I/O（如元数据读写或日志落盘确认）→ 磁盘 hang 会导致租约过期 → <strong>4s 是无法通过调参突破的硬上限</strong>。</li>
-</ul>
-<p><strong>实验设计（可证伪）</strong>：将 <code>log_storage_warning_tolerance_time</code> 调至 60s、<code>log_storage_warning_trigger_percentage</code> 调至 &gt;0，然后以 <strong>2s / 4s / 5s / 6s / 8s / 10s</strong> 密集档位注入日志盘停顿：</p>
+<p><strong>判定依据（源码，非推测）：</strong></p>
+<ol>
+<li>
+<p><strong>路径 ① 的完整链条已逐行核实</strong>，且<strong>全程不经过选举租约</strong>：
+   <code>is_clog_disk_hang() / get_device_health_status()
+        → add_failure_event(FailureLevel::FATAL)
+        → PriorityV1::refresh_()  读取 fatal_failures_
+        → PriorityV1::compare()   在 compare_fatal_failures_ 处判负
+        → leader coordinator 主动切主</code>
+   这是<strong>优先级比较驱动的主动让位</strong>，租约在此期间始终正常续约。</p>
+</li>
+<li>
+<p><strong>路径 ② 的触发条件是"副本间 RPC 消息中断"，而非磁盘慢。</strong> PALF 选举模块（<code>election_acceptor.cpp</code> / <code>election_proposer.cpp</code>）的续约处理是<strong>纯内存 + RPC</strong> 的状态机，不含磁盘 I/O 调用 <span class="badge b-source">源码</span>。存储抖动期间网络正常，租约不会过期。</p>
+</li>
+<li>
+<p><strong>本案的现场特征与路径 ① 完全吻合</strong>：现场日志中命中的是 <code>*_IOWorker</code>、<code>T1002_OB_SLOG</code> 等 <strong>I/O 线程</strong>，<code>enqueue</code>/<code>dequeue</code> 仅个位数微秒而 <code>submit_used</code>/<code>return_used</code> 双侧 10s+，即阻塞发生在<strong>设备层</strong>而非调度层或网络层（§3.5）。</p>
+</li>
+</ol>
+<p><strong>因此：</strong></p>
+<blockquote>
+<p><strong>对 10~30s 量级的存储抖动，切主由路径 ① 触发，而路径 ① 的门槛完全由 <code>*_tolerance_time</code> 决定（可调至 300s）。</strong>
+<strong>"4s 硬编码租约"不是本案的天花板。参数空间是足够的。</strong></p>
+</blockquote>
+<h3 id="d0-5-2-完全吸收-的准确含义与边界">5.2 "完全吸收"的准确含义与边界</h3>
+<p>调参能做到的和不能做到的，必须说清楚：</p>
 <table>
 <thead>
 <tr>
-<th>观测到的现象</th>
-<th>结论</th>
+<th>现象</th>
+<th>调参前（默认）</th>
+<th>调参后（tolerance=60s）</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>切主消失，直到停顿远超 60s 才出现</td>
-<td><strong>H1 成立</strong> → 调参可完全吸收</td>
+<td>抖动期间事务延迟升高</td>
+<td>是</td>
+<td><strong>是（无法消除）</strong></td>
 </tr>
 <tr>
-<td>切主仍稳定发生在 ~3-4s，与参数设置无关</td>
-<td><strong>H2 成立</strong> → 4s 为硬上限，需架构兜底</td>
+<td>抖动期间部分事务超时报错</td>
+<td>是</td>
+<td><strong>取决于业务超时设置，见下</strong></td>
+</tr>
+<tr>
+<td><strong>判定磁盘故障 → 切主</strong></td>
+<td><strong>是</strong></td>
+<td><strong>否（抖动 &lt; 60s 时）</strong></td>
+</tr>
+<tr>
+<td>切主导致的连接中断与事务回滚</td>
+<td>是</td>
+<td><strong>否</strong></td>
+</tr>
+<tr>
+<td>切主后 RTO 与主从切换抖动</td>
+<td>是</td>
+<td><strong>否</strong></td>
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p><strong>在实测完成前，本文不对"能否完全吸收"给出结论。</strong> 这正是本次测试的核心价值。</p>
-</blockquote>
-<h3 id="d0-5-2-已可确定的结论">5.2 已可确定的结论</h3>
-<p>无论 H1 / H2 哪个成立，以下结论已由源码与官方文档确定：</p>
+<p><strong>准确表述：调参不能消除抖动本身，但能把"抖动 → 判定坏盘 → 切主 → 集群级故障"降级为"抖动 → 短暂卡顿 → 自行恢复"。</strong></p>
+<p>这正是 Redis / RocketMQ / ES / TiDB 在同一平台上的表现形态 —— 它们没有秒级坏盘判定器，所以只表现为阻塞。</p>
+<p><strong>仍需实测确认的量（不影响上述定性结论）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>为什么需要实测</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>60s 是否为最优取值</td>
+<td>需权衡业务侧超时与真实坏盘检出延迟</td>
+</tr>
+<tr>
+<td>抖动期间业务侧的实际错误率</td>
+<td>取决于 <code>ob_query_timeout</code> / 连接池配置，需压测确认</td>
+</tr>
+<tr>
+<td>OS 盘抖动的独立影响</td>
+<td>OS 盘不承载 clog/data，但承载 syslog 与 4G swap，路径不同（§7.2）</td>
+</tr>
+<tr>
+<td>三节点同时抖动时的行为</td>
+<td>多数派同时受损，任何参数都无法兜底</td>
+</tr>
+</tbody>
+</table>
+<h3 id="d0-5-3-已由源码与官方文档确定的结论">5.3 已由源码与官方文档确定的结论</h3>
 <ol>
-<li><strong>默认参数一定会在 5s 处误判</strong>。<code>log_storage_warning_trigger_percentage = 0</code> 的"单次 I/O 超时即判故障"模型，对云上块存储而言过于激进 <span class="badge b-source">源码</span>。</li>
-<li><strong>调整判定模型优于单纯调大超时</strong>。将 <code>log_storage_warning_trigger_percentage</code> 设为 &gt;0，把判定从"单次 I/O 事件"改为"吞吐持续劣化"，<strong>在提高抖动容忍度的同时不牺牲对真实坏盘的检出能力</strong> —— 真实坏盘表现为持续吞吐塌陷，而非单次毛刺。</li>
-<li><strong>数据盘链路不会导致停机</strong>。10~30s 量级停顿远未触及 <code>data_storage_error_tolerance_time</code>（300s）<span class="badge b-source">源码</span>。</li>
-<li><strong>3F 架构本身具备兜底能力</strong>，但兜底不等于无损：切主有 RTO，在途事务会失败。<strong>若三节点同时抖动，多数派同时失效，架构无法兜底</strong> —— 这是必须靠参数与布局优化来预防的场景。</li>
+<li><strong>默认参数一定会在 5s 处触发日志盘故障判定</strong> <span class="badge b-source">源码</span>。现场 14/14 次慢 I/O 全部 &gt; 5s。</li>
+<li><strong>⚠️ <code>log_storage_warning_trigger_percentage</code> 必须保持 0。</strong> 调大只会新增判定路径使检测更敏感（§3.3.1）<span class="badge b-source">源码</span>。</li>
+<li><strong>调大 <code>tolerance_time</code> 不会导致真实坏盘漏检</strong>。返回错误码的路径（<code>fs_error_times &gt;= 10/100</code>）与时间阈值是 <code>||</code> 关系，独立生效 <span class="badge b-source">源码</span>。</li>
+<li><strong>数据盘链路不会导致停机</strong>。10~30s 停顿远未触及 <code>data_storage_error_tolerance_time</code>（300s）<span class="badge b-source">源码</span>。</li>
+<li><strong>一次抖动的影响会持续至少 60s</strong>。数据盘 WARNING 状态的清除条件是 <code>period &gt; read_failure_black_list_interval_</code>（默认 60s）<span class="badge b-source">源码</span>。</li>
+<li><strong>3F 架构本身具备兜底能力</strong>，但兜底不等于无损：切主有 RTO，在途事务会失败。<strong>若三节点同时抖动，多数派同时失效，架构无法兜底</strong>。</li>
 <li><strong>所有相关 OB 参数均为 <code>DYNAMIC_EFFECTIVE</code></strong>，可在线调整，无需重启 <span class="badge b-source">源码</span>。</li>
 </ol>
 <hr />
@@ -919,7 +1292,7 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 <li>7.2 A 域（OS 盘）抖动影响</li>
 <li>7.3 B 域（数据盘）抖动影响</li>
 <li>7.4 C 域（日志盘）抖动影响</li>
-<li>7.5 H1 / H2 假设判定结果</li>
+<li>7.5 调参前后切主发生率对比（验证 §5.1 的源码结论）</li>
 <li>7.6 分层调优贡献度对比</li>
 <li>7.7 leader 集中 vs 均衡的影响面对比</li>
 <li>7.8 A 组（多盘条带）vs B 组（单盘 provisioned）性能与暴露面对比</li>
@@ -929,7 +1302,53 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 <blockquote>
 <p>标注 <span class="badge b-todo">待实测确认</span> 的项需经 §7 验证后方可作为最终建议。</p>
 </blockquote>
-<h3 id="d0-l1-os-内核">L1 — OS / 内核</h3>
+<h3 id="d0-l1-os-内核-rocky-linux-9-8">L1 — OS / 内核（Rocky Linux 9.8）</h3>
+<p><strong>环境事实</strong> <span class="badge b-official">官方</span>：</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rocky Linux 9.8</td>
+<td>2026-05-27 GA，RHEL 9.8 下游</td>
+<td>rockylinux.org/news</td>
+</tr>
+<tr>
+<td>Rocky Linux 9 生命周期</td>
+<td>Active Support 至 2027-05-31，EOL 2032-05-31</td>
+<td>wiki.rockylinux.org/rocky/version</td>
+</tr>
+<tr>
+<td>Azure 是否认可 Rocky Linux</td>
+<td><strong>是</strong>，经 CIQ 发布，"Microsoft CSS provides commercially reasonable support"</td>
+<td>endorsed-distros</td>
+</tr>
+<tr>
+<td>OB 4.3.5 是否支持 Rocky Linux 9</td>
+<td><strong>是</strong>，官方支持矩阵明确列出</td>
+<td>OB 官方服务器配置文档</td>
+</tr>
+<tr>
+<td>内核上游 <code>nvme_core.io_timeout</code> 默认</td>
+<td><strong>30</strong> 秒（<code>unsigned int nvme_io_timeout = 30;</code>）</td>
+<td>kernel <code>drivers/nvme/host/core.c</code></td>
+</tr>
+<tr>
+<td>RHEL 9 上 NVMe 默认 I/O 调度器</td>
+<td><code>none</code>；OB 官方："NVMe SSD 默认的 I/O 调度器为 <code>none</code>，<strong>无需调整</strong>"</td>
+<td>OB 官方 / RH KCS 5427</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>值得关注</strong>：Azure <code>enable-nvme-interface</code> 文档中列出的 NVMe 支持镜像清单，Rocky 分支只到 <strong>Rocky Linux 8.10 / 9.6</strong>，<strong>未包含 9.8</strong> <span class="badge b-official">官方</span>。这不代表 9.8 不可用，但意味着<strong>该镜像不在 Azure 已验证的"出厂即 240s"范围内，<code>nvme_core.io_timeout</code> 必须自行确认和设置</strong>。</p>
+</blockquote>
+<p><strong>建议项：</strong></p>
 <table>
 <thead>
 <tr>
@@ -942,12 +1361,22 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 <tr>
 <td><code>nvme_core.io_timeout</code></td>
 <td><strong>240</strong></td>
-<td><span class="badge b-official">官方</span> MS Learn 明确要求</td>
+<td><span class="badge b-official">官方</span> MS Learn 明确要求；上游默认仅 30s，必须确认实际值</td>
 </tr>
 <tr>
 <td>swap</td>
 <td>关闭（或移出 OS 盘）</td>
-<td>避免 OS 盘停顿时阻塞内存回收</td>
+<td>客户 OS 盘上有 4G swap；OS 盘停顿时换页会阻塞内存回收</td>
+</tr>
+<tr>
+<td><code>vm.swappiness</code></td>
+<td><strong>0</strong></td>
+<td><span class="badge b-official">官方</span> OB 官方服务器配置文档要求 <code>vm.swappiness = 0</code></td>
+</tr>
+<tr>
+<td><code>tuned</code> profile</td>
+<td><strong>确认是否为 <code>virtual-guest</code></strong></td>
+<td>见下方说明</td>
 </tr>
 <tr>
 <td><code>transparent_hugepage</code></td>
@@ -964,19 +1393,48 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 <td><code>noatime,nodiratime</code></td>
 <td>客户已配置 ✔</td>
 </tr>
+<tr>
+<td>I/O 调度器</td>
+<td><code>none</code></td>
+<td><span class="badge b-official">官方</span> NVMe 默认即为 <code>none</code>，无需调整</td>
+</tr>
 </tbody>
 </table>
-<p>设置方式（RHEL / CentOS 系）：</p>
-<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic"># /etc/default/grub 的 GRUB_CMDLINE_LINUX 追加：nvme_core.io_timeout=240</span>
-grub2-mkconfig<span style="color: #BBB"> </span>-o<span style="color: #BBB"> </span>/etc/grub2-efi.cfg<span style="color: #BBB">   </span><span style="color: #60A0B0; font-style: italic"># EFI 启动</span>
-<span style="color: #60A0B0; font-style: italic"># 或 grub2-mkconfig -o /etc/grub2.cfg  # BIOS 启动</span>
+<blockquote>
+<p><strong>⚠️ <code>tuned</code> 与 OB 官方要求存在冲突，需现场核实。</strong> RHEL 9 在虚拟机上的默认 tuned profile 是 <code>virtual-guest</code> <span class="badge b-official">官方</span>，其配置为 [官方，tuned 上游仓库]：
+<code>ini
+[main]
+include=throughput-performance
+[vm]
+dirty_bytes = 30%          # 内核默认 dirty_ratio 为 20%
+[sysctl]
+vm.swappiness = 30         # OB 官方要求 0</code>
+两点风险：
+1. <strong><code>vm.swappiness = 30</code> 会覆盖 <code>/etc/sysctl.conf</code> 中的 <code>0</code></strong>，与 OB 官方要求冲突。客户 OS 盘上有 4G swap，一旦触发换页，OS 盘抖动将直接放大为进程停顿。
+2. <strong><code>dirty_bytes = 30%</code></strong>：在 128 GiB 内存的 D32s v6 上约合 <strong>38 GB</strong> 脏页阈值，远高于内核默认的 20%。回写风暴的峰值 I/O 量更大，会加长停顿窗口。</p>
+<p>现场核实命令：<code>tuned-adm active</code>、<code>sysctl vm.swappiness vm.dirty_ratio vm.dirty_background_ratio</code>。</p>
+</blockquote>
+<p><strong>设置方式（Rocky Linux 9 / RHEL 9）：</strong></p>
+<p>NVMe 驱动通常在 initramfs 阶段加载（根文件系统位于 NVMe 盘上），因此<strong>仅写 <code>/etc/modprobe.d/</code> 不足以生效，必须重建 initramfs</strong>；更稳妥的做法是<strong>两者都做</strong>。</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic"># 方式一：内核命令行（推荐，最可靠）</span>
+grubby<span style="color: #BBB"> </span>--update-kernel<span style="color: #666">=</span>ALL<span style="color: #BBB"> </span>--args<span style="color: #666">=</span><span style="color: #4070A0">"nvme_core.io_timeout=240"</span>
+
+<span style="color: #60A0B0; font-style: italic"># 方式二：模块参数 + 重建 initramfs（RHEL 9 官方持久化流程）</span>
+<span style="color: #007020">echo</span><span style="color: #BBB"> </span><span style="color: #4070A0">'options nvme_core io_timeout=240'</span><span style="color: #BBB"> </span>&gt;<span style="color: #BBB"> </span>/etc/modprobe.d/99-nvme-timeout.conf
+dracut<span style="color: #BBB"> </span>-f<span style="color: #BBB"> </span>--regenerate-all
+
 reboot
 
-<span style="color: #60A0B0; font-style: italic"># 验证</span>
+<span style="color: #60A0B0; font-style: italic"># 验证（三处都要看）</span>
 cat<span style="color: #BBB"> </span>/proc/cmdline
-cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout<span style="color: #BBB">   </span><span style="color: #60A0B0; font-style: italic"># 期望 240</span>
+cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout<span style="color: #BBB">      </span><span style="color: #60A0B0; font-style: italic"># 期望 240</span>
+cat<span style="color: #BBB"> </span>/sys/block/nvme0n1/device/../../<span style="color: #BBB">  </span><span style="color: #40A070">2</span>&gt;/dev/null<span style="color: #BBB">    </span><span style="color: #60A0B0; font-style: italic"># 确认设备存在</span>
+uname<span style="color: #BBB"> </span>-r<span style="color: #BBB">                                             </span><span style="color: #60A0B0; font-style: italic"># 记录实际内核版本</span>
 </code></pre></div>
 
+<blockquote>
+<p>Red Hat 官方文档对该流程的表述 <span class="badge b-official">官方</span>：<em>"Generate a new initial RAM disk image to apply the changes: <code>dracut -f -v ...</code>"</em>，<em>"The changes described in this procedure will take effect and persist after rebooting the system."</em></p>
+</blockquote>
 <h3 id="d0-l2-存储布局">L2 — 存储布局</h3>
 <table>
 <thead>
@@ -1019,23 +1477,63 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <p>"The ability to adjust IOPS, throughput, and size at any time also means you can <strong>avoid the maintenance overhead of having to stripe disks</strong> to meet your needs."</p>
 </blockquote>
 <h3 id="d0-l3-oceanbase-判定模型-关键层">L3 — OceanBase 判定模型（关键层）</h3>
-<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic">-- 核心：把日志盘判定模型从"单次 IO 超时"改为"吞吐持续劣化"</span>
-<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>log_storage_warning_trigger_percentage<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #40A070">20</span>;<span style="color: #BBB">   </span><span style="color: #60A0B0; font-style: italic">-- [待实测确认] 取值 [0,50]</span>
-<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>log_storage_warning_tolerance_time<span style="color: #BBB">    </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'60s'</span>;<span style="color: #BBB"> </span><span style="color: #60A0B0; font-style: italic">-- [待实测确认] 取值 [1s,300s]</span>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic">-- ===== 日志盘：唯一有效的门槛参数 =====</span>
+<span style="color: #60A0B0; font-style: italic">-- 抬高 has_long_pending_io 的判定门槛。5s -&gt; 60s</span>
+<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>log_storage_warning_tolerance_time<span style="color: #BBB">    </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'60s'</span>;<span style="color: #BBB"> </span><span style="color: #60A0B0; font-style: italic">-- 取值 [1s,300s]</span>
 
-<span style="color: #60A0B0; font-style: italic">-- 数据盘侧同步放宽</span>
-<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>data_storage_warning_tolerance_time<span style="color: #BBB">   </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'60s'</span>;<span style="color: #BBB"> </span><span style="color: #60A0B0; font-style: italic">-- [待实测确认] 取值 [1s,300s]</span>
-<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>_data_storage_io_timeout<span style="color: #BBB">              </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'60s'</span>;<span style="color: #BBB"> </span><span style="color: #60A0B0; font-style: italic">-- [待实测确认] 取值 [1s,600s]</span>
+<span style="color: #60A0B0; font-style: italic">-- ⚠️ 保持默认 0，不要调大！</span>
+<span style="color: #60A0B0; font-style: italic">-- 源码中它与 tolerance_time 判定是 || 关系(§3.3.1)，</span>
+<span style="color: #60A0B0; font-style: italic">-- 调大只会新增两条判定路径,使检测更敏感而非更宽松。</span>
+<span style="color: #60A0B0; font-style: italic">-- ALTER SYSTEM SET log_storage_warning_trigger_percentage = 0;   -- 保持默认</span>
 
-<span style="color: #60A0B0; font-style: italic">-- ERROR 级保持默认，确保真实坏盘仍能被及时发现</span>
-<span style="color: #60A0B0; font-style: italic">-- data_storage_error_tolerance_time = 300s  (默认，不建议调整)</span>
+<span style="color: #60A0B0; font-style: italic">-- ===== 数据盘：两个参数串联,总门槛 = io_timeout + warning_tolerance =====</span>
+<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>data_storage_warning_tolerance_time<span style="color: #BBB">   </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'60s'</span>;<span style="color: #BBB"> </span><span style="color: #60A0B0; font-style: italic">-- 取值 [1s,300s]</span>
+<span style="color: #60A0B0; font-style: italic">-- _data_storage_io_timeout 保持 10s 即可:</span>
+<span style="color: #60A0B0; font-style: italic">--   它只决定"何时开始探测",探测本身还有 warning_tolerance 的窗口。</span>
+<span style="color: #60A0B0; font-style: italic">--   若要更保守可一并调大,但收益低于上面一条。</span>
+<span style="color: #60A0B0; font-style: italic">-- ALTER SYSTEM SET _data_storage_io_timeout           = '10s';  -- 默认,取值 [1s,600s]</span>
+
+<span style="color: #60A0B0; font-style: italic">-- ===== ERROR 级保持默认,确保真实坏盘仍能被及时发现 =====</span>
+<span style="color: #60A0B0; font-style: italic">-- data_storage_error_tolerance_time = 300s  (默认,不建议调整)</span>
 </code></pre></div>
 
-<p><strong>权衡说明（必须向使用方说明）</strong>：放宽 <code>*_tolerance_time</code> 会延缓对真实坏盘的发现。因此：</p>
+<p><strong>为什么这样调是安全的（源码级论证）：</strong></p>
+<p>放宽 <code>*_tolerance_time</code> 只放宽了<strong>"超时"</strong>判定，<strong>不影响"报错"判定</strong>。数据盘探测路径中两者是 <code>||</code> 关系 <span class="badge b-source">源码</span>：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">if</span><span style="color: #BBB"> </span>(current_ts<span style="color: #BBB"> </span><span style="color: #666">&gt;=</span><span style="color: #BBB"> </span>error_ts<span style="color: #BBB"> </span><span style="color: #666">||</span><span style="color: #BBB"> </span>(sys_io_errno<span style="color: #BBB"> </span><span style="color: #666">!=</span><span style="color: #BBB"> </span><span style="color: #40A070">0</span><span style="color: #BBB"> </span><span style="color: #666">&amp;&amp;</span><span style="color: #BBB"> </span>fs_error_times<span style="color: #BBB"> </span><span style="color: #666">&gt;=</span><span style="color: #BBB"> </span><span style="color: #40A070">100</span>))<span style="color: #BBB"> </span>{
+<span style="color: #BBB">  </span>set_device_error();
+}<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">else</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">if</span><span style="color: #BBB"> </span>(current_ts<span style="color: #BBB"> </span><span style="color: #666">&gt;=</span><span style="color: #BBB"> </span>warn_ts<span style="color: #BBB"> </span><span style="color: #666">||</span><span style="color: #BBB"> </span>(sys_io_errno<span style="color: #BBB"> </span><span style="color: #666">!=</span><span style="color: #BBB"> </span><span style="color: #40A070">0</span><span style="color: #BBB"> </span><span style="color: #666">&amp;&amp;</span><span style="color: #BBB"> </span>fs_error_times<span style="color: #BBB"> </span><span style="color: #666">&gt;=</span><span style="color: #BBB"> </span><span style="color: #40A070">10</span>))<span style="color: #BBB"> </span>{
+<span style="color: #BBB">  </span>set_device_warning();
+}
+</code></pre></div>
+
+<p>真实坏盘几乎总是伴随 <code>sys_io_errno != 0</code>（EIO 等），走的是右半支，<strong>与 <code>tolerance_time</code> 无关</strong>。因此：</p>
+<table>
+<thead>
+<tr>
+<th>故障形态</th>
+<th>调参后是否仍能及时检出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>磁盘返回 I/O 错误（真实坏盘）</td>
+<td><strong>是</strong>，10 次错误即 WARNING，100 次即 ERROR，不受 tolerance_time 影响</td>
+</tr>
+<tr>
+<td>磁盘完全无响应（挂死）</td>
+<td><strong>是</strong>，<code>data_storage_error_tolerance_time</code>（300s）兜底</td>
+</tr>
+<tr>
+<td>短时高延迟（平台抖动）</td>
+<td><strong>否 —— 这正是我们想要的效果</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>仍需说明的权衡：</strong></p>
 <ul>
-<li><strong>优先调整 <code>log_storage_warning_trigger_percentage</code></strong>（改判定模型），而非单纯调大超时 —— 前者不牺牲真实故障检出能力；</li>
-<li>保持 <code>data_storage_error_tolerance_time</code> 默认值作为兜底；</li>
-<li>配合平台侧磁盘健康监控，形成双重保障。</li>
+<li>纯超时型的慢盘（不报错、只是持续变慢）检出会从 5s 延后到 60s；</li>
+<li>抖动窗口内业务侧仍会出现延迟升高，需配合 L5 的应用侧超时设置；</li>
+<li>建议配合平台侧磁盘健康监控形成双重保障。</li>
 </ul>
 <h3 id="d0-l4-缓冲与节流">L4 — 缓冲与节流</h3>
 <table>
@@ -1093,6 +1591,44 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 </table>
 <hr />
 <h2 id="d0-9-下一步行动">9. 下一步行动</h2>
+<h3 id="d0-9-1-可立即执行-不需要测试环境">9.1 可立即执行（不需要测试环境）</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>事项</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>在三节点执行 §0 结论速览中的 <strong><code>FAILURE_DETECTOR</code> 事件查询 SQL</strong></td>
+<td><strong>一条 SQL 即可确证</strong> 2026-07-20 的切主是否由磁盘故障判定引发，以及是 LOG 还是 STORAGE 模块</td>
+</tr>
+<tr>
+<td>2</td>
+<td>现场核实 <code>cat /sys/module/nvme_core/parameters/io_timeout</code></td>
+<td>确认 Rocky 9.8 镜像实际生效值是 240 还是 30（Azure 清单未含 9.6 之后版本）</td>
+</tr>
+<tr>
+<td>3</td>
+<td>现场核实 <code>tuned-adm active</code> + <code>sysctl vm.swappiness vm.dirty_ratio</code></td>
+<td>排查 tuned <code>virtual-guest</code> 覆盖 OB 官方要求的 <code>vm.swappiness=0</code>（§8 L1）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>向客户索取各磁盘的 provisioned IOPS / 吞吐设置</td>
+<td>判定条带化是否真的换到了性能（§4.1.1、L2）</td>
+</tr>
+<tr>
+<td>5</td>
+<td>索取三节点完整 <code>observer.log</code> + <code>election.log</code>（不过滤）</td>
+<td>补齐 §3.5 的证据边界</td>
+</tr>
+</tbody>
+</table>
+<h3 id="d0-9-2-需要测试环境">9.2 需要测试环境</h3>
 <table>
 <thead>
 <tr>
@@ -1104,45 +1640,34 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 </thead>
 <tbody>
 <tr>
-<td>1</td>
-<td>向客户索取 <code>DBA_OB_SERVER_EVENT_HISTORY</code>（2026-07-20 15:00~15:10）</td>
-<td>确认切主事件与其 reason</td>
-<td>§3.5 因果链从推断升级为直接证据</td>
-</tr>
-<tr>
-<td>2</td>
-<td>向客户索取三节点完整 <code>observer.log</code> + <code>election.log</code></td>
-<td>判断触发路径是 PALF 租约还是 failure detector</td>
-<td>H1/H2 的现场侧佐证</td>
-</tr>
-<tr>
-<td>3</td>
+<td>6</td>
 <td>搭建 3 × D32s v6 测试环境</td>
 <td>执行 <code>TEST-PLAN.md</code></td>
 <td>§7 全部实测章节</td>
 </tr>
 <tr>
-<td>4</td>
-<td>执行 §5.1 H1/H2 判定实验</td>
-<td><strong>回答"能否完全吸收"</strong></td>
-<td>§5、§8 最终建议定稿</td>
+<td>7</td>
+<td>执行 S3（日志盘）与 S7（调优后）对照</td>
+<td>验证 §5.1 的源码结论，标定最优 <code>tolerance_time</code></td>
+<td>§8 参数取值定稿</td>
 </tr>
 <tr>
-<td>5</td>
+<td>8</td>
+<td>执行 S11（A/B 布局对比）</td>
+<td>验证"条带化换不来性能"命题</td>
+<td>§4.1.1、L2 建议定稿</td>
+</tr>
+<tr>
+<td>9</td>
 <td>在 4.3.5.5 上用 <code>GV$OB_PARAMETERS</code> 复核全部参数默认值</td>
 <td>确认本文源码引用与实际版本一致</td>
 <td>§3 各表格的版本适用性</td>
 </tr>
-<tr>
-<td>6</td>
-<td><strong>向客户索取各磁盘的 provisioned IOPS / 吞吐设置</strong></td>
-<td>判定条带化是否真的换到了性能</td>
-<td>§4.1.1 与 L2 布局建议的最终定稿</td>
-</tr>
 </tbody>
 </table>
 <blockquote>
-<p>在第 4 项完成前，§8 中标注 <span class="badge b-todo">待实测确认</span> 的参数取值<strong>不可作为对客户的正式建议</strong>。</p>
+<p>§8 中的参数<strong>方向性结论已由源码确定</strong>（调 <code>tolerance_time</code>、不调 <code>trigger_percentage</code>），
+但<strong>具体取值（60s）仍建议经第 7 项标定后再定稿</strong>。</p>
 </blockquote>
 <hr />
 <h2 id="d0-10-附录-完整引用清单">10. 附录：完整引用清单</h2>
@@ -1186,6 +1711,78 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <td><strong>Azure 托管磁盘类型</strong>：PSSDv2 不支持 host caching；IOPS/吞吐 provision 规则；"可避免条带化的维护开销"</td>
 <td><a href="https://learn.microsoft.com/azure/virtual-machines/disks-types">https://learn.microsoft.com/azure/virtual-machines/disks-types</a></td>
 </tr>
+<tr>
+<td>A7</td>
+<td><strong>Azure 认可的 Linux 发行版</strong>：Rocky Linux（CIQ）— "Microsoft CSS provides commercially reasonable support for these images."</td>
+<td><a href="https://learn.microsoft.com/azure/virtual-machines/linux/endorsed-distros">https://learn.microsoft.com/azure/virtual-machines/linux/endorsed-distros</a></td>
+</tr>
+<tr>
+<td>A8</td>
+<td><strong>OceanBase V4.3.5 服务器配置</strong>：支持的 OS 矩阵（含 Rocky Linux 9、RHEL 7/8/9）；<code>vm.swappiness=0</code>；"NVMe SSD 默认的 I/O 调度器为 <code>none</code>，无需调整"</td>
+<td><a href="https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000002013491">https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000002013491</a></td>
+</tr>
+<tr>
+<td>A9</td>
+<td><strong>Rocky Linux 9.8 GA 公告</strong>（2026-05-27，RHEL 9.8 下游）</td>
+<td><a href="https://rockylinux.org/news/rocky-linux-9-8-ga-release">https://rockylinux.org/news/rocky-linux-9-8-ga-release</a></td>
+</tr>
+<tr>
+<td>A10</td>
+<td><strong>Rocky Linux 版本与生命周期</strong>：Rocky 9 Active Support 至 2027-05-31，EOL 2032-05-31</td>
+<td><a href="https://wiki.rockylinux.org/rocky/version/">https://wiki.rockylinux.org/rocky/version/</a></td>
+</tr>
+<tr>
+<td>A11</td>
+<td><strong>RHEL 9 内核模块管理</strong>：<code>/etc/modprobe.d/*.conf</code> + <code>dracut -f</code> 持久化流程</td>
+<td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_monitoring_and_updating_the_kernel/managing-kernel-modules_managing-monitoring-and-updating-the-kernel">https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_monitoring_and_updating_the_kernel/managing-kernel-modules_managing-monitoring-and-updating-the-kernel</a></td>
+</tr>
+<tr>
+<td>A12</td>
+<td><strong>RHEL 9 默认 tuned profile</strong>：虚拟机为 <code>virtual-guest</code></td>
+<td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/monitoring_and_managing_system_status_and_performance/index">https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/monitoring_and_managing_system_status_and_performance/index</a></td>
+</tr>
+<tr>
+<td>A13</td>
+<td><strong>tuned <code>virtual-guest</code> profile 定义</strong>：<code>dirty_bytes=30%</code>、<code>vm.swappiness=30</code>（继承 <code>throughput-performance</code>）</td>
+<td><a href="https://github.com/redhat-performance/tuned/blob/master/profiles/virtual-guest/tuned.conf">https://github.com/redhat-performance/tuned/blob/master/profiles/virtual-guest/tuned.conf</a></td>
+</tr>
+<tr>
+<td>A14</td>
+<td><strong>RHEL 9 磁盘调度器</strong>；KCS 5427 I/O 调度器推荐</td>
+<td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/monitoring_and_managing_system_status_and_performance/setting-the-disk-scheduler_monitoring-and-managing-system-status-and-performance">https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/monitoring_and_managing_system_status_and_performance/setting-the-disk-scheduler_monitoring-and-managing-system-status-and-performance</a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="d0-上游内核源码">上游内核源码</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>文件</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>K1</td>
+<td><code>drivers/nvme/host/core.c</code></td>
+<td><code>unsigned int nvme_io_timeout = 30;</code> — NVMe I/O 超时上游默认值</td>
+</tr>
+<tr>
+<td>K2</td>
+<td><code>drivers/nvme/host/nvme.h</code></td>
+<td><code>#define NVME_IO_TIMEOUT (nvme_io_timeout * HZ)</code></td>
+</tr>
+<tr>
+<td>K3</td>
+<td><code>mm/page-writeback.c</code></td>
+<td><code>dirty_background_ratio = 10</code>、<code>vm_dirty_ratio = 20</code> 上游默认值</td>
+</tr>
+<tr>
+<td>K4</td>
+<td><code>mm/vmscan.c</code></td>
+<td><code>int vm_swappiness = 60;</code> 上游默认值</td>
+</tr>
 </tbody>
 </table>
 <h3 id="d0-源码">源码</h3>
@@ -1207,7 +1804,7 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <tr>
 <td>S2</td>
 <td><code>src/logservice/leader_coordinator/ob_failure_detector.cpp</code></td>
-<td>日志盘故障判定的消费方，位于主选举协调器路径</td>
+<td><strong>本文核心</strong>。<code>is_clog_disk_hang()</code> 的"或"式判定结构（§3.3.1）；<code>detect_palf_hang_failure_()</code> / <code>detect_data_disk_io_failure_()</code> 产出 <code>FailureLevel::FATAL</code>；<code>insert_event_to_table_()</code> 写入 <code>__all_server_event_history</code>；detect 定时器周期 100ms</td>
 </tr>
 <tr>
 <td>S3</td>
@@ -1228,6 +1825,26 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <td>S6</td>
 <td><code>src/logservice/palf/palf_options.{h,cpp}</code></td>
 <td>日志盘水位三阈值的语义注释与约束校验（<code>limit_threshold &gt; utilization_threshold</code>）</td>
+</tr>
+<tr>
+<td>S7</td>
+<td><code>src/logservice/leader_coordinator/election_priority_impl/election_priority_v1.cpp</code></td>
+<td><code>PriorityV1::compare()</code> 比较顺序；<code>compare_fatal_failures_</code> 为第 1 顺位故障判据；<code>refresh_()</code> 读取 FATAL 事件</td>
+</tr>
+<tr>
+<td>S8</td>
+<td><code>src/share/io/ob_io_struct.cpp</code></td>
+<td>数据盘链路：<code>ObIOFaultDetector::record_io_timeout()</code>（<strong>仅 read</strong>）；<code>handle_retry_task_()</code> 的 <code>warn_ts</code>/<code>error_ts</code> 计算；<code>get_device_health_status()</code> 的 WARNING 清除条件；<code>read_failure_black_list_interval_ = 60s</code></td>
+</tr>
+<tr>
+<td>S9</td>
+<td><code>src/share/io/ob_io_define.h</code></td>
+<td><code>MAX_DETECT_READ_WARN_TIMES = 10</code>、<code>MAX_DETECT_READ_ERROR_TIMES = 100</code> — 真实坏盘的独立快速通道</td>
+</tr>
+<tr>
+<td>S10</td>
+<td><code>src/logservice/leader_coordinator/ob_failure_detector.h</code></td>
+<td><code>PALF_DISK_DETECT_INTERVAL_US = 1s</code>、<code>MIN_RECOVERY_INTERVAL = 30s</code>、<code>PALF_DISK_FAILURE_TIME_UPPER_BOUND = 30min</code></td>
 </tr>
 </tbody>
 </table>
@@ -1298,7 +1915,7 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 <tr>
 <td>Q3</td>
 <td><strong>能否通过调参完全吸收</strong></td>
-<td><strong>判定 H1 / H2 假设（§5）</strong></td>
+<td><strong><code>tolerance_time</code> 门槛标定实验（§5.1）</strong> —— 验证源码结论"切主由 failure detector 触发、不经过 PALF 租约"</td>
 </tr>
 <tr>
 <td>Q4</td>
@@ -1336,7 +1953,11 @@ cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout
 </tr>
 <tr>
 <td>OS</td>
-<td>与客户现网一致</td>
+<td><strong>Rocky Linux 9.8</strong>（与客户一致）。部署后立即核实 <code>uname -r</code> 与 <code>cat /sys/module/nvme_core/parameters/io_timeout</code> —— Azure NVMe 支持镜像清单中 Rocky 分支只到 9.6，9.8 的出厂超时值需实测确认</td>
+</tr>
+<tr>
+<td>tuned</td>
+<td>记录 <code>tuned-adm active</code>。若为 <code>virtual-guest</code> / <code>throughput-performance</code>，需先解决其 <code>vm.swappiness=30</code> 与 OB 要求 <code>vm.swappiness=0</code> 的冲突（见 README §8 L1）</td>
 </tr>
 </tbody>
 </table>
@@ -1643,19 +2264,21 @@ dmsetup<span style="color: #BBB"> </span>resume<span style="color: #BBB"> </span
 </tr>
 </tbody>
 </table>
-<h3 id="d1-5-1-h1-h2-判定实验-最高优先级">5.1 H1 / H2 判定实验（最高优先级）</h3>
-<p>这是回答 Q3 的决定性实验。</p>
+<h3 id="d1-5-1-tolerance_time-门槛标定实验-最高优先级">5.1 <code>tolerance_time</code> 门槛标定实验（最高优先级）</h3>
+<p>源码已确认：切主由 failure detector 的 FATAL 事件经优先级降级触发，<strong>不经过 PALF 4s 硬编码租约</strong>（见 README §5.1）。本实验的目的因此从"判定 H1/H2"变为<strong>标定实际生效门槛并验证源码结论</strong>。</p>
 <p><strong>步骤</strong>：</p>
-<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic">-- 1) 只放宽 failure detector，不动其他任何参数</span>
-<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>log_storage_warning_tolerance_time<span style="color: #BBB">    </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'60s'</span>;
-<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>log_storage_warning_trigger_percentage<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #40A070">20</span>;
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic">-- 1) 只放宽 log 侧 tolerance_time，其余一律不动</span>
+<span style="color: #007020; font-weight: bold">ALTER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SYSTEM</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">SET</span><span style="color: #BBB"> </span>log_storage_warning_tolerance_time<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'60s'</span>;
+<span style="color: #60A0B0; font-style: italic">-- ⚠️ 不要调 log_storage_warning_trigger_percentage，保持默认 0</span>
+<span style="color: #60A0B0; font-style: italic">--    源码中它与 has_long_pending_io 是 || 关系，调大会使检测更敏感</span>
 </code></pre></div>
 
 <div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic"># 2) 对 leader 节点的日志盘做密集档位注入，每档 5 次</span>
-<span style="color: #007020; font-weight: bold">for</span><span style="color: #BBB"> </span>d<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">in</span><span style="color: #BBB"> </span><span style="color: #40A070">2</span><span style="color: #BBB"> </span><span style="color: #40A070">4</span><span style="color: #BBB"> </span><span style="color: #40A070">5</span><span style="color: #BBB"> </span><span style="color: #40A070">6</span><span style="color: #BBB"> </span><span style="color: #40A070">8</span><span style="color: #BBB"> </span><span style="color: #40A070">10</span>;<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">do</span>
+<span style="color: #60A0B0; font-style: italic">#    重点覆盖 4s(PALF 租约) 与 5s(默认 tolerance) 两条线的两侧</span>
+<span style="color: #007020; font-weight: bold">for</span><span style="color: #BBB"> </span>d<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">in</span><span style="color: #BBB"> </span><span style="color: #40A070">2</span><span style="color: #BBB"> </span><span style="color: #40A070">4</span><span style="color: #BBB"> </span><span style="color: #40A070">5</span><span style="color: #BBB"> </span><span style="color: #40A070">6</span><span style="color: #BBB"> </span><span style="color: #40A070">8</span><span style="color: #BBB"> </span><span style="color: #40A070">10</span><span style="color: #BBB"> </span><span style="color: #40A070">15</span><span style="color: #BBB"> </span><span style="color: #40A070">30</span><span style="color: #BBB"> </span><span style="color: #40A070">45</span><span style="color: #BBB"> </span><span style="color: #40A070">60</span><span style="color: #BBB"> </span><span style="color: #40A070">90</span>;<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">do</span>
 <span style="color: #BBB">  </span><span style="color: #007020; font-weight: bold">for</span><span style="color: #BBB"> </span>i<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">in</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">$(</span>seq<span style="color: #BBB"> </span><span style="color: #40A070">1</span><span style="color: #BBB"> </span><span style="color: #40A070">5</span><span style="color: #007020; font-weight: bold">)</span>;<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">do</span>
 <span style="color: #BBB">    </span>./scripts/inject/dm_suspend.sh<span style="color: #BBB"> </span>-d<span style="color: #BBB"> </span>clog<span style="color: #BBB"> </span>-t<span style="color: #BBB"> </span><span style="color: #BB60D5">$d</span>
-<span style="color: #BBB">    </span>sleep<span style="color: #BBB"> </span><span style="color: #40A070">60</span>
+<span style="color: #BBB">    </span>sleep<span style="color: #BBB"> </span><span style="color: #40A070">90</span><span style="color: #BBB">     </span><span style="color: #60A0B0; font-style: italic"># &gt; read_failure_black_list_interval(60s)，确保状态完全恢复</span>
 <span style="color: #BBB">  </span><span style="color: #007020; font-weight: bold">done</span>
 <span style="color: #007020; font-weight: bold">done</span>
 </code></pre></div>
@@ -1670,35 +2293,51 @@ dmsetup<span style="color: #BBB"> </span>resume<span style="color: #BBB"> </span
 </thead>
 <tbody>
 <tr>
-<td>切主消失，直到停顿远超 60s 才出现</td>
-<td><strong>H1 成立</strong> → 切主仅由 failure detector 触发 → <strong>调参可完全吸收</strong></td>
+<td>切主全部消失，直到停顿 &gt; 60s 才重新出现</td>
+<td><strong>源码结论得到验证</strong> → 门槛确由 <code>tolerance_time</code> 决定，调参可吸收</td>
 </tr>
 <tr>
 <td>切主仍稳定发生在 ~3-4s，与参数无关</td>
-<td><strong>H2 成立</strong> → PALF 租约 4s 为硬上限 → <strong>必须靠架构 + 布局兜底</strong></td>
+<td>源码结论不成立，存在未识别的租约依赖路径 → 需重新分析</td>
 </tr>
 <tr>
-<td>介于两者之间</td>
-<td>记录实际分界点，分档给出结论</td>
+<td>出现在两者之间的某个固定值</td>
+<td>记录实际分界点，反查对应源码路径</td>
 </tr>
 </tbody>
 </table>
-<p><strong>辅助佐证</strong>：检查 <code>observer.log</code> 中切主事件的 reason 字段：</p>
+<p><strong>4) 对照组</strong>：同样档位下把 <code>log_storage_warning_trigger_percentage</code> 从 0 调到 20 再跑一遍。</p>
+<blockquote>
+<p><strong>预期（源码推论）</strong>：调到 20 后切主<strong>不会减少，反而可能增多</strong> —— 因为新增了
+<code>is_perf_decrease_error</code> / <code>has_small_pending_io</code> 两条判定路径。
+若实测证实这一点，即为 §3.3.1 源码分析的直接验证。</p>
+</blockquote>
+<p><strong>辅助佐证</strong>：切主事件的权威判据是事件表，而非日志：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">SELECT</span><span style="color: #BBB"> </span>gmt_create,<span style="color: #BBB"> </span>svr_ip,<span style="color: #BBB"> </span>module,<span style="color: #BBB"> </span>event,<span style="color: #BBB"> </span>name1,<span style="color: #BBB"> </span>value1,<span style="color: #BBB"> </span>name2,<span style="color: #BBB"> </span>value2
+<span style="color: #007020; font-weight: bold">FROM</span><span style="color: #BBB"> </span>oceanbase.DBA_OB_SERVER_EVENT_HISTORY
+<span style="color: #007020; font-weight: bold">WHERE</span><span style="color: #BBB"> </span>module<span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">'FAILURE_DETECTOR'</span>
+<span style="color: #007020; font-weight: bold">ORDER</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">BY</span><span style="color: #BBB"> </span>gmt_create<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">DESC</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">LIMIT</span><span style="color: #BBB"> </span><span style="color: #40A070">50</span>;
+</code></pre></div>
+
 <table>
 <thead>
 <tr>
-<th>日志签名</th>
+<th>观测到的记录</th>
 <th>指向</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>LeaseExpiredToRevoke</code> / <code>leader_lease_expired</code></td>
-<td>PALF 租约路径（H2）</td>
+<td><code>FAILURE_MODULE = LOG</code>，<code>FAILURE_TYPE = PROCESS_HANG</code></td>
+<td>日志盘链路（§3.3）</td>
 </tr>
 <tr>
-<td>failure detector 相关事件</td>
-<td>failure detector 路径（H1）</td>
+<td><code>FAILURE_MODULE = STORAGE</code>，<code>FAILURE_TYPE = PROCESS_HANG</code></td>
+<td>数据盘链路（§3.2）</td>
+</tr>
+<tr>
+<td><code>observer.log</code> 中 <code>LeaseExpiredToRevoke</code> / <code>leader_lease_expired</code></td>
+<td>PALF 租约路径（源码推论认为不应出现）</td>
 </tr>
 </tbody>
 </table>
@@ -1716,17 +2355,17 @@ dmsetup<span style="color: #BBB"> </span>resume<span style="color: #BBB"> </span
 <tbody>
 <tr>
 <td><strong>L1 OS/内核</strong></td>
-<td><code>nvme_core.io_timeout=240</code>、关闭 swap、I/O 调度器与 <code>nr_requests</code>、<code>vm.dirty_*</code></td>
+<td><code>nvme_core.io_timeout=240</code>（grubby + modprobe.d + dracut）、关闭 swap、<code>vm.swappiness=0</code>、核实 tuned profile、<code>vm.dirty_*</code></td>
 <td>S1/S2/S3 全档位</td>
 </tr>
 <tr>
 <td><strong>L2 存储布局</strong></td>
 <td>A 组 → B 组（降条带数、provisioned IOPS）、clog 水位降至 60%</td>
-<td>S1/S2/S8</td>
+<td>S1/S2/S8/S11</td>
 </tr>
 <tr>
 <td><strong>L3 OB 判定模型</strong></td>
-<td><code>log_storage_warning_trigger_percentage</code> 0→20、<code>*_tolerance_time</code>、<code>_data_storage_io_timeout</code></td>
+<td><code>log_storage_warning_tolerance_time</code> 5s→60s、<code>data_storage_warning_tolerance_time</code> 5s→60s（<strong><code>trigger_percentage</code> 保持 0</strong>）</td>
 <td><strong>S1（关键）</strong></td>
 </tr>
 <tr>
@@ -1978,11 +2617,11 @@ dmsetup<span style="color: #BBB"> </span>resume<span style="color: #BBB"> </span
 </tr>
 <tr>
 <td><strong>调高容错阈值会延缓真实坏盘发现</strong></td>
-<td>报告给出双向权衡；优先调 <code>trigger_percentage</code>（改模型）而非单纯调大超时；保持 <code>data_storage_error_tolerance_time</code> 默认</td>
+<td>报告给出双向权衡；源码显示时间阈值与错误次数阈值（<code>MAX_DETECT_READ_WARN_TIMES=10</code> / <code>MAX_DETECT_READ_ERROR_TIMES=100</code>）是<strong>并列的"或"关系</strong>，真实坏盘仍走次数路径；保持 <code>data_storage_error_tolerance_time</code> 默认 300s</td>
 </tr>
 <tr>
 <td><strong>日志盘无 error 级二级参数</strong>，容错模型比数据盘更激进</td>
-<td>单独验证超长停顿（60s/120s）下日志盘的上限行为</td>
+<td>单独验证超长停顿（60s/120s）下日志盘的上限行为；注意 <code>PALF_DISK_FAILURE_TIME_UPPER_BOUND=30min</code></td>
 </tr>
 <tr>
 <td><strong>参数默认值需在 4.3.5.5 上复核</strong></td>
@@ -1993,8 +2632,8 @@ dmsetup<span style="color: #BBB"> </span>resume<span style="color: #BBB"> </span
 <td>单独设场景验证后台搬迁 I/O 的影响，不可简单建议"打开"</td>
 </tr>
 <tr>
-<td><code>MAX_TST</code> 硬编码无法调整</td>
-<td>若 H2 成立，只能通过 L1/L2 降低命中概率 + L5 应用侧重试来缓解</td>
+<td><strong>源码分析结论未经实测验证</strong></td>
+<td>§5.1 标定实验即为验证手段；若实测与源码推论不符，以实测为准并回溯源码路径</td>
 </tr>
 </tbody>
 </table></section><section class="doc-sep"><h1>脚本说明</h1>
@@ -2012,7 +2651,7 @@ dmsetup<span style="color: #BBB"> </span>resume<span style="color: #BBB"> </span
 <span style="border: 1px solid #F00">│</span><span style="color: #BBB">   </span><span style="border: 1px solid #F00">├──</span><span style="color: #BBB"> </span>start_collect.sh<span style="color: #BBB">      </span>启动<span style="color: #BBB"> </span>OS<span style="color: #BBB"> </span>层采集(iostat<span style="color: #666">/</span>vmstat<span style="color: #666">/</span>dmesg<span style="color: #666">/</span>nvme)
 <span style="border: 1px solid #F00">│</span><span style="color: #BBB">   </span><span style="border: 1px solid #F00">├──</span><span style="color: #BBB"> </span>stop_collect.sh<span style="color: #BBB">       </span>停止采集
 <span style="border: 1px solid #F00">│</span><span style="color: #BBB">   </span><span style="border: 1px solid #F00">├──</span><span style="color: #BBB"> </span>ob_events.sh<span style="color: #BBB">          </span>OB<span style="color: #BBB"> </span>层:<span style="color: #BBB"> </span>事件历史<span style="color: #666">/</span>leader<span style="color: #BBB"> </span>分布<span style="color: #666">/</span>参数基线<span style="color: #BBB">  </span><span style="border: 1px solid #F00">←</span><span style="color: #BBB"> </span>切主权威判据
-<span style="border: 1px solid #F00">│</span><span style="color: #BBB">   </span><span style="border: 1px solid #F00">└──</span><span style="color: #BBB"> </span>scan_observer_log.sh<span style="color: #BBB">  </span>observer.log<span style="color: #BBB"> </span>签名扫描<span style="color: #BBB">  </span><span style="border: 1px solid #F00">←</span><span style="color: #BBB"> </span>H1<span style="color: #666">/</span>H2<span style="color: #BBB"> </span>判定辅助
+<span style="border: 1px solid #F00">│</span><span style="color: #BBB">   </span><span style="border: 1px solid #F00">└──</span><span style="color: #BBB"> </span>scan_observer_log.sh<span style="color: #BBB">  </span>observer.log<span style="color: #BBB"> </span>签名扫描<span style="color: #BBB">  </span><span style="border: 1px solid #F00">←</span><span style="color: #BBB"> </span>触发路径判定辅助
 <span style="border: 1px solid #F00">└──</span><span style="color: #BBB"> </span>tuning<span style="color: #666">/</span><span style="color: #BBB">           </span>调优
 <span style="color: #BBB">    </span><span style="border: 1px solid #F00">├──</span><span style="color: #BBB"> </span>l1_os.sh<span style="color: #BBB">          </span>L1:<span style="color: #BBB"> </span>OS<span style="color: #666">/</span>内核<span style="color: #BBB"> </span>(nvme_core.io_timeout=<span style="color: #40A070">240</span><span style="border: 1px solid #F00">、</span>swap<span style="border: 1px solid #F00">、</span>队列<span style="border: 1px solid #F00">、</span>dirty)
 <span style="color: #BBB">    </span><span style="border: 1px solid #F00">├──</span><span style="color: #BBB"> </span>l3_tuning.sql<span style="color: #BBB">     </span>L3:<span style="color: #BBB"> </span>OB<span style="color: #BBB"> </span>磁盘故障判定模型<span style="color: #BBB">  </span><span style="border: 1px solid #F00">←</span><span style="color: #BBB"> </span>关键层
@@ -2063,15 +2702,20 @@ sudo<span style="color: #BBB"> </span>./scripts/collect/scan_observer_log.sh<spa
 <span style="color: #BBB">  </span>-f<span style="color: #BBB"> </span><span style="color: #4070A0">'2026-08-30 10:00:00'</span><span style="color: #BBB"> </span>-t<span style="color: #BBB"> </span><span style="color: #4070A0">'2026-08-30 12:00:00'</span><span style="color: #BBB"> </span>-o<span style="color: #BBB"> </span>data/S1_logscan.txt
 </code></pre></div>
 
-<h3 id="d2-4-h1-h2-判定实验-最高优先级">4. H1 / H2 判定实验（最高优先级）</h3>
-<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic"># 只调 failure detector, 不动其他任何参数</span>
+<h3 id="d2-4-tolerance_time-门槛标定实验-最高优先级">4. <code>tolerance_time</code> 门槛标定实验（最高优先级）</h3>
+<blockquote>
+<p>源码已确认切主由 failure detector 的 FATAL 事件触发、<strong>不经过 PALF 4s 租约</strong>（报告 §5.1）。
+本实验用于<strong>标定实际门槛并验证该源码结论</strong>。</p>
+</blockquote>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic"># 只调 tolerance_time, 不动其他任何参数</span>
 obclient<span style="color: #BBB"> </span>-h127.0.0.1<span style="color: #BBB"> </span>-P2881<span style="color: #BBB"> </span>-uroot@sys<span style="color: #BBB"> </span>-p<span style="color: #BBB"> </span>-Doceanbase<span style="color: #BBB"> </span><span style="color: #4070A0">&lt;&lt;'SQL'</span>
-<span style="color: #4070A0">ALTER SYSTEM SET log_storage_warning_tolerance_time     = '60s';</span>
-<span style="color: #4070A0">ALTER SYSTEM SET log_storage_warning_trigger_percentage = 20;</span>
+<span style="color: #4070A0">ALTER SYSTEM SET log_storage_warning_tolerance_time = '60s';</span>
+<span style="color: #4070A0">-- ⚠️ 不要调 log_storage_warning_trigger_percentage, 保持默认 0</span>
+<span style="color: #4070A0">--    源码中它与 has_long_pending_io 是 || 关系, 调大只会让检测更敏感</span>
 <span style="color: #4070A0">SQL</span>
 
-<span style="color: #60A0B0; font-style: italic"># 阈值密集区注入</span>
-sudo<span style="color: #BBB"> </span>./scripts/inject/run_matrix.sh<span style="color: #BBB"> </span>-d<span style="color: #BBB"> </span>clog<span style="color: #BBB"> </span>-s<span style="color: #BBB"> </span>H1H2<span style="color: #BBB"> </span>-L<span style="color: #BBB"> </span><span style="color: #4070A0">"2 4 5 6 8 10"</span>
+<span style="color: #60A0B0; font-style: italic"># 阈值密集区注入(覆盖 4s PALF 租约线与 5s 默认 tolerance 线两侧)</span>
+sudo<span style="color: #BBB"> </span>./scripts/inject/run_matrix.sh<span style="color: #BBB"> </span>-d<span style="color: #BBB"> </span>clog<span style="color: #BBB"> </span>-s<span style="color: #BBB"> </span>TOLCAL<span style="color: #BBB"> </span>-L<span style="color: #BBB"> </span><span style="color: #4070A0">"2 4 5 6 8 10 15 30 45 60 90"</span>
 </code></pre></div>
 
 <p>判定：</p>
@@ -2084,18 +2728,24 @@ sudo<span style="color: #BBB"> </span>./scripts/inject/run_matrix.sh<span style=
 </thead>
 <tbody>
 <tr>
-<td>切主消失，直到停顿远超 60s 才出现</td>
-<td><strong>H1 成立</strong> → 调参可完全吸收</td>
+<td>切主全部消失，直到停顿 &gt; 60s 才重新出现</td>
+<td><strong>源码结论得到验证</strong> → 调参可吸收</td>
 </tr>
 <tr>
 <td>切主仍稳定发生在 ~3-4s，与参数无关</td>
-<td><strong>H2 成立</strong> → PALF 租约 4s 为硬上限</td>
+<td>源码结论不成立，存在未识别的租约路径 → 需重新分析</td>
 </tr>
 </tbody>
 </table>
+<p>权威判据是事件表而非日志：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #BB60D5">OB_PASS</span><span style="color: #666">=</span>xxx<span style="color: #BBB"> </span>./scripts/collect/ob_events.sh<span style="color: #BBB"> </span>-m<span style="color: #BBB"> </span>events<span style="color: #BBB"> </span><span style="color: #4070A0; font-weight: bold">\</span>
+<span style="color: #BBB">  </span>-f<span style="color: #BBB"> </span><span style="color: #4070A0">'2026-08-30 10:00:00'</span><span style="color: #BBB"> </span>-t<span style="color: #BBB"> </span><span style="color: #4070A0">'2026-08-30 12:00:00'</span><span style="color: #BBB"> </span>-o<span style="color: #BBB"> </span>data/TOLCAL_events.tsv
+<span style="color: #60A0B0; font-style: italic"># 关注 module = FAILURE_DETECTOR 的记录</span>
+</code></pre></div>
+
 <p>辅助佐证：<code>scan_observer_log.sh</code> 输出中，
-<code>[C] PALF 选举租约</code> 分组有匹配 → 指向 H2；
-<code>[D] failure detector</code> 分组有匹配 → 指向 H1。</p>
+<code>[D] failure detector</code> 分组有匹配 → 符合源码分析的路径；
+<code>[C] PALF 选举租约</code> 分组有匹配 → 与源码分析不符，需重新核查。</p>
 <hr />
 <h2 id="d2-安全机制">安全机制</h2>
 <table>

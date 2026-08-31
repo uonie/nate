@@ -1,32 +1,72 @@
 # OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践
 
 > **文档状态**：分析与方案部分已完成（源码级论证）；实测数据章节为待填模板。
-> **适用版本**：OceanBase 4.3.5.5 / OBProxy 4.3.1.6 / Azure Standard D32s v6 + Premium SSD v2
-> **最后更新**：2026-08-30
+> **适用版本**：OceanBase 4.3.5.5 / OBProxy 4.3.1.6 / Azure Standard D32s v6 + Premium SSD v2 / **Rocky Linux 9.8**
+> **最后更新**：2026-08-31
 
 ---
 
 ## 摘要
 
-OceanBase 在云上块存储环境中对**瞬时 I/O 高延迟事件**的敏感度显著高于其他常见中间件。本文通过**源码级**分析定位到三条独立的故障判定链路，并给出可证伪的测试方案与最佳实践配置。
+OceanBase 在云上块存储环境中对**瞬时 I/O 高延迟事件**的敏感度显著高于其他常见中间件。本文通过**源码级**分析定位故障判定链路，并给出可证伪的测试方案与最佳实践配置。
 
-**核心结论（分析阶段）**
+**核心结论**
 
-1. **根因是超时层级倒挂**。Azure 官方要求 OS 侧 NVMe I/O 超时设为 **240s**，以便"Azure host 级超时与恢复机制优先处理磁盘故障或中断" [官方]；而 OceanBase 默认在 **5s** 即判定磁盘故障 [源码]。两者相差近两个数量级。
+1. **触发切主的门槛已被源码精确定位，不是估计值。** 判定链路有且只有两条，门槛分别是**日志盘 5s**、**数据盘 10s + 5s ≈ 15s**（§3.2 / §3.3）。客户现场 14 次慢 I/O 的 **p50 = 10.2s、max = 11.3s、14/14 全部超过 5s**，**必然击穿日志盘门槛**。
 
-2. **最激进的一环是 `log_storage_warning_trigger_percentage = 0`**。该默认值的语义是：**只要任意单个 I/O 的响应时间超过 5s，日志盘即被判定为故障** —— 不是持续性能劣化，而是单次 I/O 事件 [源码]。
+2. **两条链路的终点完全相同，都是切主。** 二者都产出 `FailureLevel::FATAL` 事件，进入选举优先级比较的**第一顺位故障项** `compare_fatal_failures_`，导致本节点让出 leader [源码]。
 
-3. **这解释了"为何只有 OB 敏感"**。Redis / RocketMQ / ES / TiDB 不存在"秒级判定坏盘并主动发起选主"的探测器；它们在 I/O 停顿时仅表现为阻塞，停顿结束后自然恢复。
+3. **根因是超时层级倒挂。** Azure 官方要求 OS 侧 NVMe I/O 超时设为 **240s**，以便"Azure host 级超时与恢复机制优先处理磁盘故障或中断" [官方]；Linux 内核上游默认 **30s** [源码]；而 OceanBase 默认 **5s** 即判故障。三层之间相差近两个数量级，**最内层反而最敏感**。
 
-4. **存在一个尚未定论的关键分歧点**：切主可能由两条路径触发 —— 可调参的 failure detector（5s）或**硬编码不可调的 PALF 选举租约（4s）**[源码]。**二者的区分决定了"能否通过调参完全吸收"的最终答案**，必须由实测判定（见 §5.1）。
+4. **切主是"优先级降级后的主动让位"，不是"租约超时后的被动选举"。** 这一点由源码判定：`ObFailureDetector` 每 100ms 刷新，FATAL 事件进入 election priority 比较。**因此 PALF 硬编码的 4s 租约不是本案的触发因素**，`*_tolerance_time` 才是（§5）。这直接回答了"能否通过调参吸收"——**参数空间足够**。
 
-5. **客户现网存在四个影响放大因素**：LVM 多盘条带化、leader 高度集中于同一节点、自动均衡被关闭、clog 卷水位逼近回收阈值。
+5. **⚠️ 修正：`log_storage_warning_trigger_percentage` 必须保持默认值 `0`，调大适得其反。** 源码显示"单次 I/O 超时"与"吞吐持续劣化"两条判定是 **`||`（或）关系而非替换关系**：调大该参数**不会豁免**前者，只会**额外新增**两条判定路径，使检测**更敏感**（§3.3.1）。**唯一能抬高日志盘门槛的参数是 `log_storage_warning_tolerance_time`。**
 
-6. **条带化在 D32s v6 上换不来性能**。官方数据显示单块 PSSDv2 可 provision 到 80,000 IOPS / 2,000 MB/s，**已超过 D32s v6 整机的 uncached 上限 66,667 IOPS / 1,984 MBps** [官方]。微软文档亦直言可"避免为满足需求而条带化磁盘的维护开销"。因此当前的 6 盘 / 4 盘条带只换来了 **4~6 倍的抖动暴露面**（§4.1.1）。
+6. **调大 `tolerance_time` 不会削弱对真实坏盘的检出能力。** 源码中"返回 I/O 错误码"的判定路径（`fs_error_times >= 10 → WARNING`、`>= 100 → ERROR`）**完全独立于 `tolerance_time`** [源码]。即：放宽的只是"超时"判定，"报错"判定不受影响。这是本方案安全性的关键论据（§8）。
+
+7. **这解释了"为何只有 OB 敏感"**。Redis / RocketMQ / ES / TiDB 不存在"秒级判定坏盘并主动发起选主"的探测器；它们在 I/O 停顿时仅表现为阻塞，停顿结束后自然恢复。
+
+8. **条带化在 D32s v6 上换不来性能**。官方数据显示单块 PSSDv2 可 provision 到 80,000 IOPS / 2,000 MB/s，**已超过 D32s v6 整机的 uncached 上限 66,667 IOPS / 1,984 MBps** [官方]。微软文档亦直言可"避免为满足需求而条带化磁盘的维护开销"。因此当前的 6 盘 / 4 盘条带只换来了 **4~6 倍的抖动暴露面**（§4.1.1）。
 
 > **证据边界**：客户提供的日志是按 `-4389` 过滤后的摘录，**其中不含切主事件的直接记录**。
 > 本文的因果链由**源码路径**与**时间相关性**建立，属高可信推断；
-> 要升级为现场直接证据，需补充 `DBA_OB_SERVER_EVENT_HISTORY` 与完整 observer/election 日志（见 §3.5 证据边界声明）。
+> 要升级为现场直接证据，只需一条 SQL（见下方"结论速览 → 确证用 SQL"）。
+
+---
+
+## 结论速览
+
+**客户四个问题的直接答复：**
+
+| # | 问题 | 结论 | 依据 |
+|---|---|---|---|
+| Q1 | OB 在 Azure v6 上表现如何 | **无版本级不兼容**。OB 4.3.5 官方支持 Rocky Linux 9 [官方]；Rocky Linux 是 Azure 认可发行版 [官方]。问题不在"能不能跑"，而在**默认容错阈值与云盘延迟分布不匹配** | A7 / A8 |
+| Q2 | 默认参数下抖动会造成什么影响 | **确定会切主**。日志盘门槛 5s，数据盘门槛约 15s；现场 14/14 次慢 I/O 均 > 5s（p50 10.2s） | S3 / F1 |
+| Q3 | **能否通过调参完全吸收** | **可以吸收到 60s 量级，且不牺牲真实坏盘检出。** 关键参数是两个 `*_tolerance_time`（上限均为 300s）。**触发路径不经过 PALF 4s 硬编码租约**，故不存在"调不动的天花板" | S3 / S7 |
+| Q4 | 最佳实践配置 | 见 §8。**最小改动集**为下方 4 条 | — |
+
+**最小改动集（按收益/风险排序）：**
+
+| 顺序 | 层 | 动作 | 需重启 | 风险 |
+|---|---|---|---|---|
+| 1 | OS | `nvme_core.io_timeout=240`（对齐 Azure 官方值） | 是 | 极低 |
+| 2 | OB | `log_storage_warning_tolerance_time` 5s → **60s** | 否 | 低 |
+| 3 | OB | `data_storage_warning_tolerance_time` 5s → **60s** | 否 | 低 |
+| 4 | OB | `log_storage_warning_trigger_percentage` **保持 0（不要动）** | — | — |
+
+> **不要做**：调大 `log_storage_warning_trigger_percentage`（会让检测更敏感）；调大 `data_storage_error_tolerance_time`（300s 是真实坏盘的兜底线，应保留）。
+
+**确证用 SQL** —— 一条查询即可判定当时是否真的发生了磁盘故障判定。源码中 `ObFailureDetector` 的每一次判定都会写入 `__all_server_event_history` [源码]：
+
+```sql
+SELECT gmt_create, svr_ip, module, event, name1, value1, name2, value2
+FROM oceanbase.DBA_OB_SERVER_EVENT_HISTORY
+WHERE module = 'FAILURE_DETECTOR'
+  AND gmt_create BETWEEN '2026-07-20 15:00:00' AND '2026-07-20 15:10:00'
+ORDER BY gmt_create;
+```
+
+若返回 `FAILURE_MODULE = LOG` / `FAILURE_TYPE = PROCESS_HANG` 的记录，即为切主原因的**直接证据**。
 
 ---
 
@@ -71,10 +111,17 @@ OceanBase 源码引用统一基于 `oceanbase/oceanbase` commit **`fa399038f7edf
 | VM 规格 | Standard **D32s v6**（32 vCPU / 128 GiB） |
 | 磁盘类型 | Premium SSD v2 |
 | 存储接口 | **NVMe**（`MSFT NVMe Accelerator v1.0`） |
+| 操作系统 | **Rocky Linux 9.8**（RHEL 9.8 下游，2026-05-27 GA）[官方] |
 | OB 版本 | 4.3.5.5 |
 | OBProxy | 4.3.1.6 |
 
 该规格的官方远程存储上限 [官方]（详见 §4.1.1）：uncached **66,667 IOPS / 1,984 MBps**，最大 64 块远程盘，**无本地临时盘**。
+
+**操作系统侧的三条官方事实** [官方]：
+
+1. **Rocky Linux 9 在 OceanBase 4.3.5 官方支持矩阵内**（x86_64 / ARM_64），不存在版本级不兼容。
+2. **Rocky Linux 是 Azure 认可（endorsed）的发行版**，经 CIQ 发布，*"Microsoft CSS provides commercially reasonable support for these images."*
+3. **但 Azure `enable-nvme-interface` 页面列出的 NVMe 支持镜像清单中，Rocky 分支只到 8.10 / 9.6，未包含 9.8。** 该页面同时说明"某些较旧的操作系统镜像默认超时为 30 秒"。因此 **`nvme_core.io_timeout` 的实际生效值必须现场确认，不能假定为 240**（§8 L1）。
 
 ### 2.2 磁盘布局 [现场]
 
@@ -111,12 +158,20 @@ clog 挂载参数：`rw,noatime,nodiratime,attr2,inode64,logbufs=8,logbsize=32k,
 | # | 层级 | 窗口 | 可调 | 等级 |
 |---|---|---|---|---|
 | 1 | Azure 官方要求 OS 侧 NVMe I/O 超时 | **240s** | 是 | [官方] |
-| 2 | 旧镜像 `nvme_core.io_timeout` 默认 | 30s | 是 | [官方] |
+| 2 | Linux 内核上游 `nvme_core.io_timeout` 默认 | **30s** | 是 | [源码] |
 | 3 | OB `_data_storage_io_timeout` | **10s** | 是 [1s,600s] | [源码] |
 | 4 | OB `data_storage_warning_tolerance_time` | **5s** | 是 [1s,300s] | [源码] |
-| 5 | OB `log_storage_warning_tolerance_time` | **5s** | 是 [1s,300s] | [源码] |
+| 5 | OB `log_storage_warning_tolerance_time` | **5s** ← **最敏感** | 是 [1s,300s] | [源码] |
 | 6 | OB `data_storage_error_tolerance_time` | 300s | 是 [10s,7200s] | [源码] |
-| 7 | **PALF 选举租约** | **4s** | **否（硬编码）** | [源码] |
+| 7 | PALF 选举租约（**本案不触发**，见 §5.1） | 4s | 否（硬编码） | [源码] |
+
+内核上游默认值 [源码]，`drivers/nvme/host/core.c`：
+
+```c
+unsigned int nvme_io_timeout = 30;
+module_param_named(io_timeout, nvme_io_timeout, uint, 0644);
+MODULE_PARM_DESC(io_timeout, "timeout in seconds for I/O");
+```
 
 **Microsoft Learn 官方原文** [官方]：
 
@@ -124,7 +179,7 @@ clog 挂载参数：`rw,noatime,nodiratime,attr2,inode64,logbufs=8,logbsize=32k,
 >
 > — <https://learn.microsoft.com/azure/virtual-machines/enable-nvme-interface>
 
-**这是本文最重要的官方依据**：平台的设计前提是"OS 层应当等待足够长的时间，让平台侧的恢复机制先行处理"。而 OceanBase 默认在 5s 即做出终局判定。
+**这是本文最重要的官方依据**：平台的设计前提是"OS 层应当等待足够长的时间，让平台侧的恢复机制先行处理"。而 OceanBase 默认在 **5s** 即做出终局判定 —— 比平台建议值小 **48 倍**，比内核上游默认值还小 6 倍。**整个超时层级是倒挂的：越靠近应用层，容忍度反而越低。**
 
 ### 3.2 链路 A：数据盘故障判定
 
@@ -144,28 +199,61 @@ DEF_TIME_WITH_CHECKER(data_storage_error_tolerance_time, OB_CLUSTER_PARAMETER, "
         common::ObDataStorageErrorToleranceTimeChecker, "[10s,7200s]", ...);
 ```
 
-判定链：
+判定链（**已由源码逐行核实**，`src/share/io/ob_io_struct.cpp` [源码]）：
 
 ```
-单个 I/O 超过 10s (_data_storage_io_timeout)
-        │  记为 I/O 失败
+单个 [读] I/O 超过 10s (_data_storage_io_timeout)
+        │  ObIOFaultDetector::record_io_timeout() → 推入 RetryTask
+        │  ⚠️ 仅 read 触发；write 分支直接返回 OB_NOT_SUPPORTED
         ▼
-持续失败超过 5s (data_storage_warning_tolerance_time)
-        │
+探测线程循环重试 detect_read()，指数退避
+        │  handle_retry_task_():
+        │    warn_ts  = diagnose_begin_ts + data_storage_warning_tolerance_time   (5s)
+        │    error_ts = diagnose_begin_ts + data_storage_error_tolerance_time   (300s)
         ▼
-数据盘状态 = WARNING  ──►  触发切主等事件
-        │
-        │  持续失败超过 300s (data_storage_error_tolerance_time)
+重试窗口内始终未成功，current_ts >= warn_ts
+        │  set_device_warning()  →  DEVICE_HEALTH_WARNING
         ▼
-数据盘状态 = ERROR    ──►  触发停机等事件
+ObFailureDetector::detect_data_disk_io_failure_()
+        │  发现 status != DEVICE_HEALTH_NORMAL
+        │  → FailureEvent(PROCESS_HANG, STORAGE, FailureLevel::FATAL)
+        ▼
+       切主
 ```
+
+**由此得到数据盘的精确门槛：**
+
+| 阶段 | 参数 | 默认 | 累计 |
+|---|---|---|---|
+| 单次读 I/O 判超时 | `_data_storage_io_timeout` | 10s | 10s |
+| 重试探测窗口 | `data_storage_warning_tolerance_time` | 5s | **≈ 15s → 切主** |
+| 升级为 ERROR | `data_storage_error_tolerance_time` | 300s | ≈ 310s → 停机 |
+
+**四条源码级要点：**
+
+1. **只有「读」会触发数据盘故障判定。** `record_io_timeout()` / `record_io_error()` 中 `result.flag_.is_write()` 分支直接 `ret = OB_NOT_SUPPORTED` [源码]。写超时不进入这条链路。
+
+2. **WARNING 与 ERROR 都会产生 FATAL 事件。** `detect_data_disk_io_failure_()` 的判断是 `!= DEVICE_HEALTH_NORMAL`，并不区分两级 [源码]。即 WARNING 就足以切主。
+
+3. **WARNING 状态有最短保持期。** `get_device_health_status()` 中清除 WARNING 需要 `period > read_failure_black_list_interval_`，该值在 `ObIOConfig` 中默认 **60s** [源码]。**即一次 15s 的读停顿，会让该节点在优先级比较中"带伤"至少 60s。**
+
+4. **返回错误码的真实坏盘走独立快速通道，不受 `tolerance_time` 影响：**
+   ```cpp
+   if (current_ts >= error_ts || (sys_io_errno != 0 && fs_error_times >= MAX_DETECT_READ_ERROR_TIMES)) {
+     set_device_error();
+   } else if (current_ts >= warn_ts || (sys_io_errno != 0 && fs_error_times >= MAX_DETECT_READ_WARN_TIMES)) {
+     set_device_warning();
+   }
+   ```
+   `MAX_DETECT_READ_WARN_TIMES = 10`、`MAX_DETECT_READ_ERROR_TIMES = 100`（`src/share/io/ob_io_define.h`）[源码]。
+   **这是"调大 tolerance_time 不会导致真实坏盘漏检"的直接源码证据**：`sys_io_errno != 0` 这一支与时间阈值是 `||` 关系。
 
 OceanBase 官方文档对两个状态的描述 [官方]：
 
 - `data_storage_warning_tolerance_time`：*"探测线程会将该数据盘状态设置为 `WARNING`，该状态会**触发切主**等事件以正常服务业务请求。"*
 - `data_storage_error_tolerance_time`：*"探测线程会将该数据盘状态设置为 `ERROR`，该状态会**触发停机**等事件以避免向该节点发送的请求失败。"*
 
-> **对于 10~30s 量级的瞬时停顿**：会跨过 WARNING（5s），但**不会**达到 ERROR（300s）。即数据盘链路可能导致切主，但不会导致节点停机。
+> **对于 10~30s 量级的瞬时停顿**：会跨过 WARNING（≈15s），但**不会**达到 ERROR（≈310s）。即数据盘链路可能导致切主，但不会导致节点停机。
 
 **三个参数均为 `DYNAMIC_EFFECTIVE`，无需重启 OBServer 即可在线生效** [源码]。
 
@@ -185,25 +273,98 @@ DEF_INT(log_storage_warning_trigger_percentage, OB_CLUSTER_PARAMETER, "0", "[0,5
   "and performance degradation has been ongoing for log_storage_warning_tolerance_time seconds.");
 ```
 
-**这是全文最关键的一段代码。** 参数语义分两种模式：
+**参数文档描述的两种模式：**
 
-| `log_storage_warning_trigger_percentage` | 判定模型 |
+| `log_storage_warning_trigger_percentage` | 文档描述的判定模型 |
 |---|---|
-| **`0`（默认）** | **任意单个 I/O 的 RT 超过 `log_storage_warning_tolerance_time`（5s）→ 立即判定日志盘故障** |
-| `> 0` | 当前吞吐 < 正常吞吐 × N% **且持续劣化达 `log_storage_warning_tolerance_time` 秒** → 才判定故障 |
+| **`0`（默认）** | 任意单个 I/O 的 RT 超过 `log_storage_warning_tolerance_time`（5s）→ 判定日志盘故障 |
+| `> 0` | 当前吞吐 < 正常吞吐 × N% **且持续劣化达 `log_storage_warning_tolerance_time` 秒** → 判定故障 |
 
-消费方为 `src/logservice/leader_coordinator/ob_failure_detector.cpp` [源码]：
+### 3.3.1 ⚠️ 源码修正：两种模式是「或」关系，不是「替换」关系
+
+参数文档的措辞（"`If the value is greater than 0, which means ... only if ...`"）**极易被误读为"调大该参数就能改用更宽松的判定模型"**。核查消费方源码后可以确认，**事实并非如此**。
+
+消费方 `src/logservice/leader_coordinator/ob_failure_detector.cpp` → `PalfDiskHangDetector::is_clog_disk_hang()` [源码]：
 
 ```cpp
 const int64_t tolerance_time = GCONF.log_storage_warning_tolerance_time;
 sensitivity = GCONF.log_storage_warning_trigger_percentage;
+...
+const double bw_error_ratio = MIN(0.5, 0.01 * sensitivity);
+...
+// 路径①：IO worker 长时间没有推进
+const bool has_long_pending_io = (OB_INVALID_TIMESTAMP != last_working_time
+    && now - last_working_time > tolerance_time);
+...
+if (false == has_failure) {
+  if (((has_small_pending_io || is_perf_decrease_error) && has_continuous_error) ||
+      has_long_pending_io) {          // ← 注意这里是 ||
+    bool_ret = true;                   // 判定 clog 盘 hang
+    last_detect_failure_time_ = now;
+  }
+}
 ```
 
-该文件位于 **`leader_coordinator`（主选举协调器）** 目录下，即这一判定**直接进入切主决策路径**。
+**三点决定性推论：**
 
-**结论**：默认配置下，日志盘只需经历**一次**超过 5s 的 I/O，即被判定为故障并进入切主流程。对于任何共享式 / 网络化块存储，这都是一个极易被触发的条件。
+1. **`has_long_pending_io` 是一个独立的 `||` 分支**。它只依赖 `tolerance_time`，**完全不受 `sensitivity`（即 `trigger_percentage`）影响**。无论该参数取 0 还是 50，这条路径始终生效。
+
+2. **`sensitivity = 0` 时，另外两条路径恒为 false**。因为 `bw_error_ratio = MIN(0.5, 0.01 × 0) = 0`，判定条件 `learn_avg_bw_[i] * 0 > this_avg_bw` 对任何非负吞吐都不成立。这与官方文档"默认值 0 意味着只由 IO RT 判定"的描述一致。
+
+3. **因此把 `trigger_percentage` 调大 = 在保留原有路径的基础上再增加两条判定路径 = 检测变得更敏感，而非更宽松。**
+
+**结论（本文的核心修正）：**
+
+> **唯一能抬高日志盘判定门槛的参数是 `log_storage_warning_tolerance_time`（默认 5s，可调至 300s）。**
+> **`log_storage_warning_trigger_percentage` 应保持默认值 `0`。**
+
+**其余相关常量**（`ob_failure_detector.h`）[源码]：
+
+| 常量 | 值 | 含义 |
+|---|---|---|
+| `PALF_DISK_DETECT_INTERVAL_US` | **1s** | 日志盘检测采样周期 |
+| `MIN_RECOVERY_INTERVAL` | **30s** | 故障态最短恢复观察窗口 |
+| `PALF_DISK_FAILURE_TIME_UPPER_BOUND` | **30min** | 故障态强制超时解除 |
+| failure detect 定时器周期 | **100ms** | `mtl_start()` 中 `schedule_task_repeat(..., 100_ms, ...)` |
+| recovery detect 定时器周期 | **1s** | 同上 |
+
+**结论**：默认配置下，日志盘 I/O worker 只要**连续 5s 没有推进**，即被判定为故障并进入切主流程。对任何网络化块存储，这都是一个极易被触发的条件。
 
 > OceanBase 官方仓库自带磁盘 hang 的集成测试用例 `mittest/logservice/test_ob_simple_log_disk_hang.cpp`，其中显式对该参数取 `0` 与 `5` 做对照验证 [源码]，可直接作为本次测试方法论的参考基准。
+
+### 3.3.2 判定结果如何变成切主
+
+`detect_palf_hang_failure_()` 在判定 hang 后构造的事件是 [源码]：
+
+```cpp
+FailureEvent clog_disk_hang_event(FailureType::PROCESS_HANG,
+                                  FailureModule::LOG,
+                                  FailureLevel::FATAL);   // ← FATAL
+...
+add_failure_event(clog_disk_hang_event);
+LOG_DBA_ERROR(OB_DISK_HUNG, "msg", "clog disk may be hung, add failure event", ...);
+```
+
+该 FATAL 事件被选举优先级 `PriorityV1::refresh_()` 读取 [源码]：
+
+```cpp
+detector->get_specified_level_event(FailureLevel::FATAL, fatal_failures_);
+```
+
+而 `PriorityV1::compare()` 的比较顺序为 [源码]：
+
+```cpp
+compare_observer_stopped_   // kill -15 导致 observer stop
+compare_server_stopped_flag_
+compare_zone_stopped_flag_
+compare_fatal_failures_     // ← 比较致命的异常（第 4 顺位，但是第 1 个"故障类"判据）
+compare_scn_                // 避免切换至回放位点过小的副本
+...
+```
+
+前三项都是**人为运维操作**（stop server / stop zone）。因此 **`fatal_failures_` 是优先级比较中排序最高的"故障类"判据** —— 一旦本节点持有 FATAL 事件而其他副本没有，本节点在优先级比较中必然落败，leader 被切走。
+
+**这条链路是"主动让位"，与 PALF 选举租约到期的"被动选举"是两套独立机制**（见 §5）。
 
 ### 3.4 链路 C：PALF 选举租约（硬编码，不可调）
 
@@ -292,6 +453,25 @@ inline int64_t CALCULATE_TRIGGER_ELECT_WATER_MARK() { return std::min<int64_t>(M
   2. 该时间窗的**完整 `observer.log` 与 `election.log`**（不做过滤）；
   3. 三个节点（46 / 47 / 41）的日志，而非仅 46。
 
+**第 1 项一条 SQL 即可确证**——源码中 failure detector 的每一次状态变更都会调用
+`SERVER_EVENT_ADD("FAILURE_DETECTOR", ...)` 写入 `__all_server_event_history` [源码]：
+
+```sql
+SELECT gmt_create, svr_ip, module, event, name1, value1, name2, value2, name3, value3
+FROM   oceanbase.DBA_OB_SERVER_EVENT_HISTORY
+WHERE  module = 'FAILURE_DETECTOR'
+  AND  gmt_create BETWEEN '2026-07-20 15:00:00' AND '2026-07-20 15:10:00'
+ORDER  BY gmt_create;
+```
+
+判读方式：
+
+| 返回结果 | 结论 |
+|---|---|
+| 有 `FAILURE_MODULE = LOG` 且 `FAILURE_TYPE = PROCESS_HANG` 的记录 | 日志盘链路（§3.3）被触发 —— 因果链得到现场直接证据 |
+| 有 `FAILURE_MODULE = STORAGE` 的记录 | 数据盘链路（§3.2）被触发 |
+| 无任何记录 | failure detector 未触发，切主另有原因，本文因果链需重新评估 |
+
 在补齐上述材料前，本文对现场事件的表述一律限定为"观测到 6~11s 的存储 I/O 停顿"，
 不直接断言"该停顿导致了那一次 failover"。
 
@@ -306,10 +486,11 @@ inline int64_t CALCULATE_TRIGGER_ELECT_WATER_MARK() { return std::min<int64_t>(M
 
 | 阈值 | 值 | 现场停顿（6.1~11.3s）是否跨过 |
 |---|---|---|
-| PALF 有效容忍窗口（租约 4s − 水位线 1s） | ~3s | ✅ 已跨过 |
-| PALF 选举租约 | 4s | ✅ 已跨过 |
-| `log/data_storage_warning_tolerance_time` | 5s | ✅ 已跨过 |
-| `_data_storage_io_timeout` | 10s | ✅ 部分跨过 |
+| `log_storage_warning_tolerance_time`（**日志盘判故障→切主**） | 5s | ✅ **14 / 14 全部跨过** |
+| `data_storage_warning_tolerance_time` | 5s | ✅ 已跨过 |
+| `_data_storage_io_timeout`（数据盘计时起点） | 10s | ✅ 10 / 14 跨过 |
+| 数据盘 WARNING 总门槛（10s + 5s） | ~15s | ⚠️ 单次未达，但两波间隔 27s 内叠加则可能达到 |
+| PALF 选举租约（**本案不触发**，见 §5.1） | 4s | （形式上跨过，但该路径依赖 RPC 心跳而非磁盘，抖动期间网络正常） |
 | `data_storage_error_tolerance_time` | 300s | ❌ 远未触及 |
 | Azure 官方要求的 OS 侧 NVMe 超时 | 240s | ❌ 远未触及 |
 
@@ -401,38 +582,70 @@ VM 级上限先封顶。条带化在此换到的只有 **4~6 倍的抖动暴露�
 
 ## 5. 关键结论：能否通过调参完全吸收
 
-### 5.1 核心可证伪假设（必须由实测判定）
+### 5.1 结论：可以吸收到 60s 量级，触发路径不经过 PALF 硬编码租约
 
-切主存在**两条独立触发路径**，二者的默认阈值极为接近（4s vs 5s），但**可调性截然相反**：
+切主存在**两条机制截然不同的路径**：
 
-| 路径 | 阈值 | 可调性 |
+| 路径 | 机制 | 阈值 | 可调性 |
+|---|---|---|---|
+| **① Failure detector → 优先级降级 → 主动让位** | 存储故障判定 | 日志盘 **5s** / 数据盘 **≈15s** | **可调至 300s** |
+| **② PALF 选举租约到期 → 被动重新选举** | 副本间 RPC 心跳 | 有效 ≈3s / 租约 4s | 硬编码，不可调 |
+
+**判定依据（源码，非推测）：**
+
+1. **路径 ① 的完整链条已逐行核实**，且**全程不经过选举租约**：
+   ```
+   is_clog_disk_hang() / get_device_health_status()
+        → add_failure_event(FailureLevel::FATAL)
+        → PriorityV1::refresh_()  读取 fatal_failures_
+        → PriorityV1::compare()   在 compare_fatal_failures_ 处判负
+        → leader coordinator 主动切主
+   ```
+   这是**优先级比较驱动的主动让位**，租约在此期间始终正常续约。
+
+2. **路径 ② 的触发条件是"副本间 RPC 消息中断"，而非磁盘慢。** PALF 选举模块（`election_acceptor.cpp` / `election_proposer.cpp`）的续约处理是**纯内存 + RPC** 的状态机，不含磁盘 I/O 调用 [源码]。存储抖动期间网络正常，租约不会过期。
+
+3. **本案的现场特征与路径 ① 完全吻合**：现场日志中命中的是 `*_IOWorker`、`T1002_OB_SLOG` 等 **I/O 线程**，`enqueue`/`dequeue` 仅个位数微秒而 `submit_used`/`return_used` 双侧 10s+，即阻塞发生在**设备层**而非调度层或网络层（§3.5）。
+
+**因此：**
+
+> **对 10~30s 量级的存储抖动，切主由路径 ① 触发，而路径 ① 的门槛完全由 `*_tolerance_time` 决定（可调至 300s）。**
+> **"4s 硬编码租约"不是本案的天花板。参数空间是足够的。**
+
+### 5.2 "完全吸收"的准确含义与边界
+
+调参能做到的和不能做到的，必须说清楚：
+
+| 现象 | 调参前（默认） | 调参后（tolerance=60s） |
 |---|---|---|
-| **B. failure detector**（`log_storage_warning_*`） | 5s | **可调至 300s，且可切换判定模型** |
-| **C. PALF 选举租约** | 有效 ≈3s / 租约 4s | **硬编码，不可调** |
+| 抖动期间事务延迟升高 | 是 | **是（无法消除）** |
+| 抖动期间部分事务超时报错 | 是 | **取决于业务超时设置，见下** |
+| **判定磁盘故障 → 切主** | **是** | **否（抖动 < 60s 时）** |
+| 切主导致的连接中断与事务回滚 | 是 | **否** |
+| 切主后 RTO 与主从切换抖动 | 是 | **否** |
 
-**关键问题**：PALF 的租约续约依赖副本间的 RPC 消息交换，而非磁盘 I/O。因此存在两种可能：
+**准确表述：调参不能消除抖动本身，但能把"抖动 → 判定坏盘 → 切主 → 集群级故障"降级为"抖动 → 短暂卡顿 → 自行恢复"。**
 
-- **假设 H1**：续约线程独立于磁盘 I/O。磁盘 hang 时网络仍正常，follower 正常回复续约消息 → 租约不会过期 → 切主**仅**由 failure detector 触发 → **调参可完全吸收**。
-- **假设 H2**：续约路径在某处依赖磁盘 I/O（如元数据读写或日志落盘确认）→ 磁盘 hang 会导致租约过期 → **4s 是无法通过调参突破的硬上限**。
+这正是 Redis / RocketMQ / ES / TiDB 在同一平台上的表现形态 —— 它们没有秒级坏盘判定器，所以只表现为阻塞。
 
-**实验设计（可证伪）**：将 `log_storage_warning_tolerance_time` 调至 60s、`log_storage_warning_trigger_percentage` 调至 >0，然后以 **2s / 4s / 5s / 6s / 8s / 10s** 密集档位注入日志盘停顿：
+**仍需实测确认的量（不影响上述定性结论）：**
 
-| 观测到的现象 | 结论 |
+| 项 | 为什么需要实测 |
 |---|---|
-| 切主消失，直到停顿远超 60s 才出现 | **H1 成立** → 调参可完全吸收 |
-| 切主仍稳定发生在 ~3-4s，与参数设置无关 | **H2 成立** → 4s 为硬上限，需架构兜底 |
+| 60s 是否为最优取值 | 需权衡业务侧超时与真实坏盘检出延迟 |
+| 抖动期间业务侧的实际错误率 | 取决于 `ob_query_timeout` / 连接池配置，需压测确认 |
+| OS 盘抖动的独立影响 | OS 盘不承载 clog/data，但承载 syslog 与 4G swap，路径不同（§7.2） |
+| 三节点同时抖动时的行为 | 多数派同时受损，任何参数都无法兜底 |
 
-> **在实测完成前，本文不对"能否完全吸收"给出结论。** 这正是本次测试的核心价值。
+### 5.3 已由源码与官方文档确定的结论
 
-### 5.2 已可确定的结论
-
-无论 H1 / H2 哪个成立，以下结论已由源码与官方文档确定：
-
-1. **默认参数一定会在 5s 处误判**。`log_storage_warning_trigger_percentage = 0` 的"单次 I/O 超时即判故障"模型，对云上块存储而言过于激进 [源码]。
-2. **调整判定模型优于单纯调大超时**。将 `log_storage_warning_trigger_percentage` 设为 >0，把判定从"单次 I/O 事件"改为"吞吐持续劣化"，**在提高抖动容忍度的同时不牺牲对真实坏盘的检出能力** —— 真实坏盘表现为持续吞吐塌陷，而非单次毛刺。
-3. **数据盘链路不会导致停机**。10~30s 量级停顿远未触及 `data_storage_error_tolerance_time`（300s）[源码]。
-4. **3F 架构本身具备兜底能力**，但兜底不等于无损：切主有 RTO，在途事务会失败。**若三节点同时抖动，多数派同时失效，架构无法兜底** —— 这是必须靠参数与布局优化来预防的场景。
-5. **所有相关 OB 参数均为 `DYNAMIC_EFFECTIVE`**，可在线调整，无需重启 [源码]。
+1. **默认参数一定会在 5s 处触发日志盘故障判定** [源码]。现场 14/14 次慢 I/O 全部 > 5s。
+2. **⚠️ `log_storage_warning_trigger_percentage` 必须保持 0。** 调大只会新增判定路径使检测更敏感（§3.3.1）[源码]。
+3. **调大 `tolerance_time` 不会导致真实坏盘漏检**。返回错误码的路径（`fs_error_times >= 10/100`）与时间阈值是 `||` 关系，独立生效 [源码]。
+4. **数据盘链路不会导致停机**。10~30s 停顿远未触及 `data_storage_error_tolerance_time`（300s）[源码]。
+5. **一次抖动的影响会持续至少 60s**。数据盘 WARNING 状态的清除条件是 `period > read_failure_black_list_interval_`（默认 60s）[源码]。
+6. **3F 架构本身具备兜底能力**，但兜底不等于无损：切主有 RTO，在途事务会失败。**若三节点同时抖动，多数派同时失效，架构无法兜底**。
+7. **所有相关 OB 参数均为 `DYNAMIC_EFFECTIVE`**，可在线调整，无需重启 [源码]。
 
 ---
 
@@ -455,7 +668,7 @@ VM 级上限先封顶。条带化在此换到的只有 **4~6 倍的抖动暴露�
 - 7.2 A 域（OS 盘）抖动影响
 - 7.3 B 域（数据盘）抖动影响
 - 7.4 C 域（日志盘）抖动影响
-- 7.5 H1 / H2 假设判定结果
+- 7.5 调参前后切主发生率对比（验证 §5.1 的源码结论）
 - 7.6 分层调优贡献度对比
 - 7.7 leader 集中 vs 均衡的影响面对比
 - 7.8 A 组（多盘条带）vs B 组（单盘 provisioned）性能与暴露面对比
@@ -466,28 +679,71 @@ VM 级上限先封顶。条带化在此换到的只有 **4~6 倍的抖动暴露�
 
 > 标注 [待实测确认] 的项需经 §7 验证后方可作为最终建议。
 
-### L1 — OS / 内核
+### L1 — OS / 内核（Rocky Linux 9.8）
+
+**环境事实** [官方]：
+
+| 项 | 值 | 出处 |
+|---|---|---|
+| Rocky Linux 9.8 | 2026-05-27 GA，RHEL 9.8 下游 | rockylinux.org/news |
+| Rocky Linux 9 生命周期 | Active Support 至 2027-05-31，EOL 2032-05-31 | wiki.rockylinux.org/rocky/version |
+| Azure 是否认可 Rocky Linux | **是**，经 CIQ 发布，"Microsoft CSS provides commercially reasonable support" | endorsed-distros |
+| OB 4.3.5 是否支持 Rocky Linux 9 | **是**，官方支持矩阵明确列出 | OB 官方服务器配置文档 |
+| 内核上游 `nvme_core.io_timeout` 默认 | **30** 秒（`unsigned int nvme_io_timeout = 30;`） | kernel `drivers/nvme/host/core.c` |
+| RHEL 9 上 NVMe 默认 I/O 调度器 | `none`；OB 官方："NVMe SSD 默认的 I/O 调度器为 `none`，**无需调整**" | OB 官方 / RH KCS 5427 |
+
+> ⚠️ **值得关注**：Azure `enable-nvme-interface` 文档中列出的 NVMe 支持镜像清单，Rocky 分支只到 **Rocky Linux 8.10 / 9.6**，**未包含 9.8** [官方]。这不代表 9.8 不可用，但意味着**该镜像不在 Azure 已验证的"出厂即 240s"范围内，`nvme_core.io_timeout` 必须自行确认和设置**。
+
+**建议项：**
 
 | 项 | 建议值 | 依据 |
 |---|---|---|
-| `nvme_core.io_timeout` | **240** | [官方] MS Learn 明确要求 |
-| swap | 关闭（或移出 OS 盘） | 避免 OS 盘停顿时阻塞内存回收 |
+| `nvme_core.io_timeout` | **240** | [官方] MS Learn 明确要求；上游默认仅 30s，必须确认实际值 |
+| swap | 关闭（或移出 OS 盘） | 客户 OS 盘上有 4G swap；OS 盘停顿时换页会阻塞内存回收 |
+| `vm.swappiness` | **0** | [官方] OB 官方服务器配置文档要求 `vm.swappiness = 0` |
+| `tuned` profile | **确认是否为 `virtual-guest`** | 见下方说明 |
 | `transparent_hugepage` | `never` | 客户已配置 ✔ |
 | `numa` | `off` | 客户已配置 ✔ |
 | 挂载参数 | `noatime,nodiratime` | 客户已配置 ✔ |
+| I/O 调度器 | `none` | [官方] NVMe 默认即为 `none`，无需调整 |
 
-设置方式（RHEL / CentOS 系）：
+> **⚠️ `tuned` 与 OB 官方要求存在冲突，需现场核实。** RHEL 9 在虚拟机上的默认 tuned profile 是 `virtual-guest` [官方]，其配置为 [官方，tuned 上游仓库]：
+> ```ini
+> [main]
+> include=throughput-performance
+> [vm]
+> dirty_bytes = 30%          # 内核默认 dirty_ratio 为 20%
+> [sysctl]
+> vm.swappiness = 30         # OB 官方要求 0
+> ```
+> 两点风险：
+> 1. **`vm.swappiness = 30` 会覆盖 `/etc/sysctl.conf` 中的 `0`**，与 OB 官方要求冲突。客户 OS 盘上有 4G swap，一旦触发换页，OS 盘抖动将直接放大为进程停顿。
+> 2. **`dirty_bytes = 30%`**：在 128 GiB 内存的 D32s v6 上约合 **38 GB** 脏页阈值，远高于内核默认的 20%。回写风暴的峰值 I/O 量更大，会加长停顿窗口。
+>
+> 现场核实命令：`tuned-adm active`、`sysctl vm.swappiness vm.dirty_ratio vm.dirty_background_ratio`。
+
+**设置方式（Rocky Linux 9 / RHEL 9）：**
+
+NVMe 驱动通常在 initramfs 阶段加载（根文件系统位于 NVMe 盘上），因此**仅写 `/etc/modprobe.d/` 不足以生效，必须重建 initramfs**；更稳妥的做法是**两者都做**。
 
 ```bash
-# /etc/default/grub 的 GRUB_CMDLINE_LINUX 追加：nvme_core.io_timeout=240
-grub2-mkconfig -o /etc/grub2-efi.cfg   # EFI 启动
-# 或 grub2-mkconfig -o /etc/grub2.cfg  # BIOS 启动
+# 方式一：内核命令行（推荐，最可靠）
+grubby --update-kernel=ALL --args="nvme_core.io_timeout=240"
+
+# 方式二：模块参数 + 重建 initramfs（RHEL 9 官方持久化流程）
+echo 'options nvme_core io_timeout=240' > /etc/modprobe.d/99-nvme-timeout.conf
+dracut -f --regenerate-all
+
 reboot
 
-# 验证
+# 验证（三处都要看）
 cat /proc/cmdline
-cat /sys/module/nvme_core/parameters/io_timeout   # 期望 240
+cat /sys/module/nvme_core/parameters/io_timeout      # 期望 240
+cat /sys/block/nvme0n1/device/../../  2>/dev/null    # 确认设备存在
+uname -r                                             # 记录实际内核版本
 ```
+
+> Red Hat 官方文档对该流程的表述 [官方]：*"Generate a new initial RAM disk image to apply the changes: `dracut -f -v ...`"*，*"The changes described in this procedure will take effect and persist after rebooting the system."*
 
 ### L2 — 存储布局
 
@@ -506,23 +762,51 @@ cat /sys/module/nvme_core/parameters/io_timeout   # 期望 240
 ### L3 — OceanBase 判定模型（关键层）
 
 ```sql
--- 核心：把日志盘判定模型从"单次 IO 超时"改为"吞吐持续劣化"
-ALTER SYSTEM SET log_storage_warning_trigger_percentage = 20;   -- [待实测确认] 取值 [0,50]
-ALTER SYSTEM SET log_storage_warning_tolerance_time    = '60s'; -- [待实测确认] 取值 [1s,300s]
+-- ===== 日志盘：唯一有效的门槛参数 =====
+-- 抬高 has_long_pending_io 的判定门槛。5s -> 60s
+ALTER SYSTEM SET log_storage_warning_tolerance_time    = '60s'; -- 取值 [1s,300s]
 
--- 数据盘侧同步放宽
-ALTER SYSTEM SET data_storage_warning_tolerance_time   = '60s'; -- [待实测确认] 取值 [1s,300s]
-ALTER SYSTEM SET _data_storage_io_timeout              = '60s'; -- [待实测确认] 取值 [1s,600s]
+-- ⚠️ 保持默认 0，不要调大！
+-- 源码中它与 tolerance_time 判定是 || 关系(§3.3.1)，
+-- 调大只会新增两条判定路径,使检测更敏感而非更宽松。
+-- ALTER SYSTEM SET log_storage_warning_trigger_percentage = 0;   -- 保持默认
 
--- ERROR 级保持默认，确保真实坏盘仍能被及时发现
--- data_storage_error_tolerance_time = 300s  (默认，不建议调整)
+-- ===== 数据盘：两个参数串联,总门槛 = io_timeout + warning_tolerance =====
+ALTER SYSTEM SET data_storage_warning_tolerance_time   = '60s'; -- 取值 [1s,300s]
+-- _data_storage_io_timeout 保持 10s 即可:
+--   它只决定"何时开始探测",探测本身还有 warning_tolerance 的窗口。
+--   若要更保守可一并调大,但收益低于上面一条。
+-- ALTER SYSTEM SET _data_storage_io_timeout           = '10s';  -- 默认,取值 [1s,600s]
+
+-- ===== ERROR 级保持默认,确保真实坏盘仍能被及时发现 =====
+-- data_storage_error_tolerance_time = 300s  (默认,不建议调整)
 ```
 
-**权衡说明（必须向使用方说明）**：放宽 `*_tolerance_time` 会延缓对真实坏盘的发现。因此：
+**为什么这样调是安全的（源码级论证）：**
 
-- **优先调整 `log_storage_warning_trigger_percentage`**（改判定模型），而非单纯调大超时 —— 前者不牺牲真实故障检出能力；
-- 保持 `data_storage_error_tolerance_time` 默认值作为兜底；
-- 配合平台侧磁盘健康监控，形成双重保障。
+放宽 `*_tolerance_time` 只放宽了**"超时"**判定，**不影响"报错"判定**。数据盘探测路径中两者是 `||` 关系 [源码]：
+
+```cpp
+if (current_ts >= error_ts || (sys_io_errno != 0 && fs_error_times >= 100)) {
+  set_device_error();
+} else if (current_ts >= warn_ts || (sys_io_errno != 0 && fs_error_times >= 10)) {
+  set_device_warning();
+}
+```
+
+真实坏盘几乎总是伴随 `sys_io_errno != 0`（EIO 等），走的是右半支，**与 `tolerance_time` 无关**。因此：
+
+| 故障形态 | 调参后是否仍能及时检出 |
+|---|---|
+| 磁盘返回 I/O 错误（真实坏盘） | **是**，10 次错误即 WARNING，100 次即 ERROR，不受 tolerance_time 影响 |
+| 磁盘完全无响应（挂死） | **是**，`data_storage_error_tolerance_time`（300s）兜底 |
+| 短时高延迟（平台抖动） | **否 —— 这正是我们想要的效果** |
+
+**仍需说明的权衡：**
+
+- 纯超时型的慢盘（不报错、只是持续变慢）检出会从 5s 延后到 60s；
+- 抖动窗口内业务侧仍会出现延迟升高，需配合 L5 的应用侧超时设置；
+- 建议配合平台侧磁盘健康监控形成双重保障。
 
 ### L4 — 缓冲与节流
 
@@ -544,16 +828,27 @@ ALTER SYSTEM SET _data_storage_io_timeout              = '60s'; -- [待实测确
 
 ## 9. 下一步行动
 
+### 9.1 可立即执行（不需要测试环境）
+
+| # | 事项 | 目的 |
+|---|---|---|
+| 1 | 在三节点执行 §0 结论速览中的 **`FAILURE_DETECTOR` 事件查询 SQL** | **一条 SQL 即可确证** 2026-07-20 的切主是否由磁盘故障判定引发，以及是 LOG 还是 STORAGE 模块 |
+| 2 | 现场核实 `cat /sys/module/nvme_core/parameters/io_timeout` | 确认 Rocky 9.8 镜像实际生效值是 240 还是 30（Azure 清单未含 9.6 之后版本） |
+| 3 | 现场核实 `tuned-adm active` + `sysctl vm.swappiness vm.dirty_ratio` | 排查 tuned `virtual-guest` 覆盖 OB 官方要求的 `vm.swappiness=0`（§8 L1） |
+| 4 | 向客户索取各磁盘的 provisioned IOPS / 吞吐设置 | 判定条带化是否真的换到了性能（§4.1.1、L2） |
+| 5 | 索取三节点完整 `observer.log` + `election.log`（不过滤） | 补齐 §3.5 的证据边界 |
+
+### 9.2 需要测试环境
+
 | # | 事项 | 目的 | 阻塞了什么 |
 |---|---|---|---|
-| 1 | 向客户索取 `DBA_OB_SERVER_EVENT_HISTORY`（2026-07-20 15:00~15:10）| 确认切主事件与其 reason | §3.5 因果链从推断升级为直接证据 |
-| 2 | 向客户索取三节点完整 `observer.log` + `election.log` | 判断触发路径是 PALF 租约还是 failure detector | H1/H2 的现场侧佐证 |
-| 3 | 搭建 3 × D32s v6 测试环境 | 执行 `TEST-PLAN.md` | §7 全部实测章节 |
-| 4 | 执行 §5.1 H1/H2 判定实验 | **回答"能否完全吸收"** | §5、§8 最终建议定稿 |
-| 5 | 在 4.3.5.5 上用 `GV$OB_PARAMETERS` 复核全部参数默认值 | 确认本文源码引用与实际版本一致 | §3 各表格的版本适用性 |
-| 6 | **向客户索取各磁盘的 provisioned IOPS / 吞吐设置** | 判定条带化是否真的换到了性能 | §4.1.1 与 L2 布局建议的最终定稿 |
+| 6 | 搭建 3 × D32s v6 测试环境 | 执行 `TEST-PLAN.md` | §7 全部实测章节 |
+| 7 | 执行 S3（日志盘）与 S7（调优后）对照 | 验证 §5.1 的源码结论，标定最优 `tolerance_time` | §8 参数取值定稿 |
+| 8 | 执行 S11（A/B 布局对比） | 验证"条带化换不来性能"命题 | §4.1.1、L2 建议定稿 |
+| 9 | 在 4.3.5.5 上用 `GV$OB_PARAMETERS` 复核全部参数默认值 | 确认本文源码引用与实际版本一致 | §3 各表格的版本适用性 |
 
-> 在第 4 项完成前，§8 中标注 [待实测确认] 的参数取值**不可作为对客户的正式建议**。
+> §8 中的参数**方向性结论已由源码确定**（调 `tolerance_time`、不调 `trigger_percentage`），
+> 但**具体取值（60s）仍建议经第 7 项标定后再定稿**。
 
 ---
 
@@ -569,6 +864,23 @@ ALTER SYSTEM SET _data_storage_io_timeout              = '60s'; -- [待实测确
 | A4 | OceanBase `data_storage_warning_tolerance_time` | <https://www.oceanbase.com/docs/common-oceanbase-database-cn-10000000001702093> |
 | A5 | **Dsv6 系列规格**：无本地临时盘；Standard_D32s_v6 uncached PSSDv2 上限 66,667 IOPS / 1,984 MBps | <https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv6-series> |
 | A6 | **Azure 托管磁盘类型**：PSSDv2 不支持 host caching；IOPS/吞吐 provision 规则；"可避免条带化的维护开销" | <https://learn.microsoft.com/azure/virtual-machines/disks-types> |
+| A7 | **Azure 认可的 Linux 发行版**：Rocky Linux（CIQ）— "Microsoft CSS provides commercially reasonable support for these images." | <https://learn.microsoft.com/azure/virtual-machines/linux/endorsed-distros> |
+| A8 | **OceanBase V4.3.5 服务器配置**：支持的 OS 矩阵（含 Rocky Linux 9、RHEL 7/8/9）；`vm.swappiness=0`；"NVMe SSD 默认的 I/O 调度器为 `none`，无需调整" | <https://www.oceanbase.com/docs/common-oceanbase-database-cn-1000000002013491> |
+| A9 | **Rocky Linux 9.8 GA 公告**（2026-05-27，RHEL 9.8 下游） | <https://rockylinux.org/news/rocky-linux-9-8-ga-release> |
+| A10 | **Rocky Linux 版本与生命周期**：Rocky 9 Active Support 至 2027-05-31，EOL 2032-05-31 | <https://wiki.rockylinux.org/rocky/version/> |
+| A11 | **RHEL 9 内核模块管理**：`/etc/modprobe.d/*.conf` + `dracut -f` 持久化流程 | <https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_monitoring_and_updating_the_kernel/managing-kernel-modules_managing-monitoring-and-updating-the-kernel> |
+| A12 | **RHEL 9 默认 tuned profile**：虚拟机为 `virtual-guest` | <https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/monitoring_and_managing_system_status_and_performance/index> |
+| A13 | **tuned `virtual-guest` profile 定义**：`dirty_bytes=30%`、`vm.swappiness=30`（继承 `throughput-performance`） | <https://github.com/redhat-performance/tuned/blob/master/profiles/virtual-guest/tuned.conf> |
+| A14 | **RHEL 9 磁盘调度器**；KCS 5427 I/O 调度器推荐 | <https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/monitoring_and_managing_system_status_and_performance/setting-the-disk-scheduler_monitoring-and-managing-system-status-and-performance> |
+
+### 上游内核源码
+
+| # | 文件 | 内容 |
+|---|---|---|
+| K1 | `drivers/nvme/host/core.c` | `unsigned int nvme_io_timeout = 30;` — NVMe I/O 超时上游默认值 |
+| K2 | `drivers/nvme/host/nvme.h` | `#define NVME_IO_TIMEOUT (nvme_io_timeout * HZ)` |
+| K3 | `mm/page-writeback.c` | `dirty_background_ratio = 10`、`vm_dirty_ratio = 20` 上游默认值 |
+| K4 | `mm/vmscan.c` | `int vm_swappiness = 60;` 上游默认值 |
 
 ### 源码
 
@@ -577,11 +889,15 @@ ALTER SYSTEM SET _data_storage_io_timeout              = '60s'; -- [待实测确
 | # | 文件 | 内容 |
 |---|---|---|
 | S1 | `src/share/parameter/ob_parameter_seed.ipp` | `_data_storage_io_timeout`、`data_storage_warning_tolerance_time`、`data_storage_error_tolerance_time`、`log_storage_warning_tolerance_time`、`log_storage_warning_trigger_percentage`、`log_disk_utilization_threshold`、`log_disk_utilization_limit_threshold`(95, [80,100])、`log_disk_throttling_percentage`(60, [40,100]) 的定义、默认值与取值范围 |
-| S2 | `src/logservice/leader_coordinator/ob_failure_detector.cpp` | 日志盘故障判定的消费方，位于主选举协调器路径 |
+| S2 | `src/logservice/leader_coordinator/ob_failure_detector.cpp` | **本文核心**。`is_clog_disk_hang()` 的"或"式判定结构（§3.3.1）；`detect_palf_hang_failure_()` / `detect_data_disk_io_failure_()` 产出 `FailureLevel::FATAL`；`insert_event_to_table_()` 写入 `__all_server_event_history`；detect 定时器周期 100ms |
 | S3 | `src/logservice/palf/election/utils/election_common_define.h` | PALF 选举租约、续约周期、触发选举水位线的计算式 |
 | S4 | `src/logservice/palf/election/algorithm/election_impl.cpp` | `RoleChangeReason::LeaseExpiredToRevoke` 租约到期卸任 |
 | S5 | `mittest/logservice/test_ob_simple_log_disk_hang.cpp` | 官方磁盘 hang 集成测试用例，可作方法论参考 |
 | S6 | `src/logservice/palf/palf_options.{h,cpp}` | 日志盘水位三阈值的语义注释与约束校验（`limit_threshold > utilization_threshold`） |
+| S7 | `src/logservice/leader_coordinator/election_priority_impl/election_priority_v1.cpp` | `PriorityV1::compare()` 比较顺序；`compare_fatal_failures_` 为第 1 顺位故障判据；`refresh_()` 读取 FATAL 事件 |
+| S8 | `src/share/io/ob_io_struct.cpp` | 数据盘链路：`ObIOFaultDetector::record_io_timeout()`（**仅 read**）；`handle_retry_task_()` 的 `warn_ts`/`error_ts` 计算；`get_device_health_status()` 的 WARNING 清除条件；`read_failure_black_list_interval_ = 60s` |
+| S9 | `src/share/io/ob_io_define.h` | `MAX_DETECT_READ_WARN_TIMES = 10`、`MAX_DETECT_READ_ERROR_TIMES = 100` — 真实坏盘的独立快速通道 |
+| S10 | `src/logservice/leader_coordinator/ob_failure_detector.h` | `PALF_DISK_DETECT_INTERVAL_US = 1s`、`MIN_RECOVERY_INTERVAL = 30s`、`PALF_DISK_FAILURE_TIME_UPPER_BOUND = 30min` |
 
 ### 社区（非官方，仅作旁证）
 

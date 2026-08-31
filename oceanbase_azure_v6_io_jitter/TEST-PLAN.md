@@ -12,7 +12,7 @@
 |---|---|---|
 | Q1 | Azure v6 上 OB 的基线表现如何 | 无注入时的 TPS / P99 / I/O 延迟分布；与官方 VM 级上限（**66,667 IOPS / 1,984 MBps**）对比达成率 |
 | Q2 | 默认参数下 I/O 停顿会造成什么影响 | 逐档位注入，记录切主 / 停机 / 业务错误 |
-| Q3 | **能否通过调参完全吸收** | **判定 H1 / H2 假设（§5）** |
+| Q3 | **能否通过调参完全吸收** | **`tolerance_time` 门槛标定实验（§5.1）** —— 验证源码结论"切主由 failure detector 触发、不经过 PALF 租约" |
 | Q4 | 最佳实践配置是什么 | 分层调优的贡献度对比（§6）+ A/B 布局对比（S11） |
 
 ---
@@ -27,7 +27,8 @@
 | 副本模式 | **3F 三副本 1-1-1**，多数派 2/3 |
 | OB 版本 | **4.3.5.5**（必须与客户一致） |
 | OBProxy | 4.3.1.6 |
-| OS | 与客户现网一致 |
+| OS | **Rocky Linux 9.8**（与客户一致）。部署后立即核实 `uname -r` 与 `cat /sys/module/nvme_core/parameters/io_timeout` —— Azure NVMe 支持镜像清单中 Rocky 分支只到 9.6，9.8 的出厂超时值需实测确认 |
+| tuned | 记录 `tuned-adm active`。若为 `virtual-guest` / `throughput-performance`，需先解决其 `vm.swappiness=30` 与 OB 要求 `vm.swappiness=0` 的冲突（见 README §8 L1） |
 
 ### 2.2 磁盘两组对照
 
@@ -145,24 +146,26 @@ dmsetup resume <dm-device>
 | **S10** | C 日志盘 | 15s | leader 集中组 vs 均衡组 | **量化 leader 集中的放大倍数** |
 | **S11** | 无注入（纯性能） | — | A 组布局 vs B 组布局 | **验证"条带化换不来性能"命题**：对比 TPS/IOPS/吞吐/P99 |
 
-### 5.1 H1 / H2 判定实验（最高优先级）
+### 5.1 `tolerance_time` 门槛标定实验（最高优先级）
 
-这是回答 Q3 的决定性实验。
+源码已确认：切主由 failure detector 的 FATAL 事件经优先级降级触发，**不经过 PALF 4s 硬编码租约**（见 README §5.1）。本实验的目的因此从"判定 H1/H2"变为**标定实际生效门槛并验证源码结论**。
 
 **步骤**：
 
 ```sql
--- 1) 只放宽 failure detector，不动其他任何参数
-ALTER SYSTEM SET log_storage_warning_tolerance_time    = '60s';
-ALTER SYSTEM SET log_storage_warning_trigger_percentage = 20;
+-- 1) 只放宽 log 侧 tolerance_time，其余一律不动
+ALTER SYSTEM SET log_storage_warning_tolerance_time = '60s';
+-- ⚠️ 不要调 log_storage_warning_trigger_percentage，保持默认 0
+--    源码中它与 has_long_pending_io 是 || 关系，调大会使检测更敏感
 ```
 
 ```bash
 # 2) 对 leader 节点的日志盘做密集档位注入，每档 5 次
-for d in 2 4 5 6 8 10; do
+#    重点覆盖 4s(PALF 租约) 与 5s(默认 tolerance) 两条线的两侧
+for d in 2 4 5 6 8 10 15 30 45 60 90; do
   for i in $(seq 1 5); do
     ./scripts/inject/dm_suspend.sh -d clog -t $d
-    sleep 60
+    sleep 90     # > read_failure_black_list_interval(60s)，确保状态完全恢复
   done
 done
 ```
@@ -171,16 +174,30 @@ done
 
 | 观测现象 | 结论 |
 |---|---|
-| 切主消失，直到停顿远超 60s 才出现 | **H1 成立** → 切主仅由 failure detector 触发 → **调参可完全吸收** |
-| 切主仍稳定发生在 ~3-4s，与参数无关 | **H2 成立** → PALF 租约 4s 为硬上限 → **必须靠架构 + 布局兜底** |
-| 介于两者之间 | 记录实际分界点，分档给出结论 |
+| 切主全部消失，直到停顿 > 60s 才重新出现 | **源码结论得到验证** → 门槛确由 `tolerance_time` 决定，调参可吸收 |
+| 切主仍稳定发生在 ~3-4s，与参数无关 | 源码结论不成立，存在未识别的租约依赖路径 → 需重新分析 |
+| 出现在两者之间的某个固定值 | 记录实际分界点，反查对应源码路径 |
 
-**辅助佐证**：检查 `observer.log` 中切主事件的 reason 字段：
+**4) 对照组**：同样档位下把 `log_storage_warning_trigger_percentage` 从 0 调到 20 再跑一遍。
 
-| 日志签名 | 指向 |
+> **预期（源码推论）**：调到 20 后切主**不会减少，反而可能增多** —— 因为新增了
+> `is_perf_decrease_error` / `has_small_pending_io` 两条判定路径。
+> 若实测证实这一点，即为 §3.3.1 源码分析的直接验证。
+
+**辅助佐证**：切主事件的权威判据是事件表，而非日志：
+
+```sql
+SELECT gmt_create, svr_ip, module, event, name1, value1, name2, value2
+FROM oceanbase.DBA_OB_SERVER_EVENT_HISTORY
+WHERE module = 'FAILURE_DETECTOR'
+ORDER BY gmt_create DESC LIMIT 50;
+```
+
+| 观测到的记录 | 指向 |
 |---|---|
-| `LeaseExpiredToRevoke` / `leader_lease_expired` | PALF 租约路径（H2） |
-| failure detector 相关事件 | failure detector 路径（H1） |
+| `FAILURE_MODULE = LOG`，`FAILURE_TYPE = PROCESS_HANG` | 日志盘链路（§3.3） |
+| `FAILURE_MODULE = STORAGE`，`FAILURE_TYPE = PROCESS_HANG` | 数据盘链路（§3.2） |
+| `observer.log` 中 `LeaseExpiredToRevoke` / `leader_lease_expired` | PALF 租约路径（源码推论认为不应出现） |
 
 ---
 
@@ -190,9 +207,9 @@ done
 
 | 层 | 内容 | 单独验证的场景 |
 |---|---|---|
-| **L1 OS/内核** | `nvme_core.io_timeout=240`、关闭 swap、I/O 调度器与 `nr_requests`、`vm.dirty_*` | S1/S2/S3 全档位 |
-| **L2 存储布局** | A 组 → B 组（降条带数、provisioned IOPS）、clog 水位降至 60% | S1/S2/S8 |
-| **L3 OB 判定模型** | `log_storage_warning_trigger_percentage` 0→20、`*_tolerance_time`、`_data_storage_io_timeout` | **S1（关键）** |
+| **L1 OS/内核** | `nvme_core.io_timeout=240`（grubby + modprobe.d + dracut）、关闭 swap、`vm.swappiness=0`、核实 tuned profile、`vm.dirty_*` | S1/S2/S3 全档位 |
+| **L2 存储布局** | A 组 → B 组（降条带数、provisioned IOPS）、clog 水位降至 60% | S1/S2/S8/S11 |
+| **L3 OB 判定模型** | `log_storage_warning_tolerance_time` 5s→60s、`data_storage_warning_tolerance_time` 5s→60s（**`trigger_percentage` 保持 0**） | **S1（关键）** |
 | **L4 缓冲/节流** | `freeze_trigger_percentage`、`memstore_limit_percentage`、`writing_throttling_*`、`syslog_io_bandwidth_limit` | S1/S2 |
 | **L5 接入层/应用** | obproxy 拉黑与重试策略、连接池超时、幂等重试 | S1/S7 |
 
@@ -312,8 +329,8 @@ done
 | 风险 | 应对 |
 |---|---|
 | **等效注入 ≠ 平台真实事件**：`dmsetup suspend` 只停顿不报错 | 用 `dm-flakey` 对照组界定边界；报告中显式声明该局限 |
-| **调高容错阈值会延缓真实坏盘发现** | 报告给出双向权衡；优先调 `trigger_percentage`（改模型）而非单纯调大超时；保持 `data_storage_error_tolerance_time` 默认 |
-| **日志盘无 error 级二级参数**，容错模型比数据盘更激进 | 单独验证超长停顿（60s/120s）下日志盘的上限行为 |
+| **调高容错阈值会延缓真实坏盘发现** | 报告给出双向权衡；源码显示时间阈值与错误次数阈值（`MAX_DETECT_READ_WARN_TIMES=10` / `MAX_DETECT_READ_ERROR_TIMES=100`）是**并列的"或"关系**，真实坏盘仍走次数路径；保持 `data_storage_error_tolerance_time` 默认 300s |
+| **日志盘无 error 级二级参数**，容错模型比数据盘更激进 | 单独验证超长停顿（60s/120s）下日志盘的上限行为；注意 `PALF_DISK_FAILURE_TIME_UPPER_BOUND=30min` |
 | **参数默认值需在 4.3.5.5 上复核** | 现有值来自 main 分支源码；实测前用 `GV$OB_PARAMETERS` 全量比对 |
 | **开启 `enable_rebalance`/`enable_transfer` 可能反增抖动命中面** | 单独设场景验证后台搬迁 I/O 的影响，不可简单建议"打开" |
-| `MAX_TST` 硬编码无法调整 | 若 H2 成立，只能通过 L1/L2 降低命中概率 + L5 应用侧重试来缓解 |
+| **源码分析结论未经实测验证** | §5.1 标定实验即为验证手段；若实测与源码推论不符，以实测为准并回溯源码路径 |

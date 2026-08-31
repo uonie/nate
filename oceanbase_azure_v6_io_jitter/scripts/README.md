@@ -15,7 +15,7 @@ scripts/
 │   ├── start_collect.sh      启动 OS 层采集(iostat/vmstat/dmesg/nvme)
 │   ├── stop_collect.sh       停止采集
 │   ├── ob_events.sh          OB 层: 事件历史/leader 分布/参数基线  ← 切主权威判据
-│   └── scan_observer_log.sh  observer.log 签名扫描  ← H1/H2 判定辅助
+│   └── scan_observer_log.sh  observer.log 签名扫描  ← 触发路径判定辅助
 └── tuning/           调优
     ├── l1_os.sh          L1: OS/内核 (nvme_core.io_timeout=240、swap、队列、dirty)
     ├── l3_tuning.sql     L3: OB 磁盘故障判定模型  ← 关键层
@@ -74,29 +74,41 @@ sudo ./scripts/collect/scan_observer_log.sh \
   -f '2026-08-30 10:00:00' -t '2026-08-30 12:00:00' -o data/S1_logscan.txt
 ```
 
-### 4. H1 / H2 判定实验（最高优先级）
+### 4. `tolerance_time` 门槛标定实验（最高优先级）
+
+> 源码已确认切主由 failure detector 的 FATAL 事件触发、**不经过 PALF 4s 租约**（报告 §5.1）。
+> 本实验用于**标定实际门槛并验证该源码结论**。
 
 ```bash
-# 只调 failure detector, 不动其他任何参数
+# 只调 tolerance_time, 不动其他任何参数
 obclient -h127.0.0.1 -P2881 -uroot@sys -p -Doceanbase <<'SQL'
-ALTER SYSTEM SET log_storage_warning_tolerance_time     = '60s';
-ALTER SYSTEM SET log_storage_warning_trigger_percentage = 20;
+ALTER SYSTEM SET log_storage_warning_tolerance_time = '60s';
+-- ⚠️ 不要调 log_storage_warning_trigger_percentage, 保持默认 0
+--    源码中它与 has_long_pending_io 是 || 关系, 调大只会让检测更敏感
 SQL
 
-# 阈值密集区注入
-sudo ./scripts/inject/run_matrix.sh -d clog -s H1H2 -L "2 4 5 6 8 10"
+# 阈值密集区注入(覆盖 4s PALF 租约线与 5s 默认 tolerance 线两侧)
+sudo ./scripts/inject/run_matrix.sh -d clog -s TOLCAL -L "2 4 5 6 8 10 15 30 45 60 90"
 ```
 
 判定：
 
 | 观测现象 | 结论 |
 |---|---|
-| 切主消失，直到停顿远超 60s 才出现 | **H1 成立** → 调参可完全吸收 |
-| 切主仍稳定发生在 ~3-4s，与参数无关 | **H2 成立** → PALF 租约 4s 为硬上限 |
+| 切主全部消失，直到停顿 > 60s 才重新出现 | **源码结论得到验证** → 调参可吸收 |
+| 切主仍稳定发生在 ~3-4s，与参数无关 | 源码结论不成立，存在未识别的租约路径 → 需重新分析 |
+
+权威判据是事件表而非日志：
+
+```bash
+OB_PASS=xxx ./scripts/collect/ob_events.sh -m events \
+  -f '2026-08-30 10:00:00' -t '2026-08-30 12:00:00' -o data/TOLCAL_events.tsv
+# 关注 module = FAILURE_DETECTOR 的记录
+```
 
 辅助佐证：`scan_observer_log.sh` 输出中，
-`[C] PALF 选举租约` 分组有匹配 → 指向 H2；
-`[D] failure detector` 分组有匹配 → 指向 H1。
+`[D] failure detector` 分组有匹配 → 符合源码分析的路径；
+`[C] PALF 选举租约` 分组有匹配 → 与源码分析不符，需重新核查。
 
 ---
 

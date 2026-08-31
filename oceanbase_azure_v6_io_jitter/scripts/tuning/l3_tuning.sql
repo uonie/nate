@@ -24,37 +24,88 @@ ORDER BY name, svr_ip;
 
 
 -- ---------------------------------------------------------------------
--- 1) 【核心】日志盘判定模型: 单次 IO 超时  ->  吞吐持续劣化
+-- 1) 【核心】日志盘: 抬高 has_long_pending_io 的判定门槛
 --
---    源码 src/share/parameter/ob_parameter_seed.ipp 语义: [源码]
---      = 0 (默认): 只要任意单个 IO 的 RT 超过 log_storage_warning_tolerance_time,
---                  日志盘立即被判定为故障 -> 进入 leader_coordinator 切主路径。
---      > 0       : 仅当 当前吞吐 < 正常吞吐 * N/100
---                  且劣化持续 log_storage_warning_tolerance_time 秒, 才判定故障。
+--    源码 ob_failure_detector.cpp -> PalfDiskHangDetector::is_clog_disk_hang():
 --
---    这一改动在提高抖动容忍度的同时【不牺牲对真实坏盘的检出能力】——
---    真实坏盘表现为持续吞吐塌陷, 而非单次毛刺。
---    取值范围 [0,50]。
+--      const bool has_long_pending_io = (OB_INVALID_TIMESTAMP != last_working_time
+--          && now - last_working_time > tolerance_time);
+--      ...
+--      if (((has_small_pending_io || is_perf_decrease_error) && has_continuous_error)
+--          || has_long_pending_io) {        // <-- 注意是 ||
+--        bool_ret = true;                   // 判定 clog 盘 hang -> FATAL -> 切主
+--      }
+--
+--    结论: has_long_pending_io 是独立的 || 分支, 只依赖 tolerance_time,
+--          完全不受 log_storage_warning_trigger_percentage 影响。
+--
+--    因此【唯一能抬高日志盘门槛的参数就是 tolerance_time】。
+--    取值范围 [1s,300s], 默认 5s。
 -- ---------------------------------------------------------------------
-ALTER SYSTEM SET log_storage_warning_trigger_percentage = 20;   -- [待实测确认]
+ALTER SYSTEM SET log_storage_warning_tolerance_time = '60s';
 
--- 配合放宽判定窗口。取值范围 [1s,300s], 默认 5s。
-ALTER SYSTEM SET log_storage_warning_tolerance_time = '60s';    -- [待实测确认]
+-- ---------------------------------------------------------------------
+--    !! 警告: log_storage_warning_trigger_percentage 必须保持默认值 0 !!
+--
+--    参数文档的措辞 ("If the value is greater than 0, ... only if ...")
+--    极易被误读为"调大它就能换成更宽松的判定模型"。源码显示并非如此:
+--
+--      sensitivity     = GCONF.log_storage_warning_trigger_percentage;
+--      bw_error_ratio  = MIN(0.5, 0.01 * sensitivity);
+--
+--      sensitivity = 0 -> bw_error_ratio = 0
+--                      -> learn_avg_bw_[i] * 0 > this_avg_bw 恒为 false
+--                      -> is_perf_decrease_error / has_small_pending_io 恒为 false
+--                      -> 只剩 has_long_pending_io 一条判定路径
+--
+--      sensitivity > 0 -> has_long_pending_io 仍然生效 (|| 关系),
+--                         另外【新增】两条判定路径
+--                      -> 检测变得更敏感, 而不是更宽松!
+--
+--    所以: 不要动这个参数。
+-- ---------------------------------------------------------------------
+-- ALTER SYSTEM SET log_storage_warning_trigger_percentage = 0;   -- 保持默认
 
 
 -- ---------------------------------------------------------------------
 -- 2) 数据盘侧同步放宽
 --
---    判定链: 单个 IO 超过 _data_storage_io_timeout 记为失败
---            -> 持续失败超过 data_storage_warning_tolerance_time -> WARNING -> 触发切主
---            -> 持续失败超过 data_storage_error_tolerance_time   -> ERROR   -> 触发停机
+--    判定链 (源码 src/share/io/ob_io_struct.cpp 逐行核实):
+--      单个【读】IO 超过 _data_storage_io_timeout (10s)
+--        -> record_io_timeout() 推入 RetryTask  [仅 read; write 直接 NOT_SUPPORTED]
+--        -> 探测线程循环重试 detect_read()
+--        -> current_ts >= diagnose_begin_ts + data_storage_warning_tolerance_time (5s)
+--        -> set_device_warning() -> DEVICE_HEALTH_WARNING
+--        -> detect_data_disk_io_failure_() 见到 != NORMAL -> FATAL -> 切主
+--      总门槛约 10s + 5s = 15s。
+--
+--    注: WARNING 状态的清除需要 period > read_failure_black_list_interval_ (默认 60s),
+--        即一次停顿会让该节点在优先级比较中"带伤"至少 60s。
 -- ---------------------------------------------------------------------
-ALTER SYSTEM SET data_storage_warning_tolerance_time = '60s';   -- [待实测确认] 范围 [1s,300s], 默认 5s
-ALTER SYSTEM SET _data_storage_io_timeout            = '60s';   -- [待实测确认] 范围 [1s,600s], 默认 10s
+ALTER SYSTEM SET data_storage_warning_tolerance_time = '60s';   -- 范围 [1s,300s], 默认 5s
+
+-- _data_storage_io_timeout 保持默认 10s 即可:
+--   它只决定"何时开始探测", 探测本身还有 warning_tolerance 的窗口。
+--   若要更保守可一并调大, 但收益低于上面一条。
+-- ALTER SYSTEM SET _data_storage_io_timeout          = '10s';   -- 默认, 范围 [1s,600s]
 
 -- ERROR 级【保持默认 300s 不动】, 作为真实坏盘的兜底检出。
 -- 10~30s 量级的瞬时停顿远未触及该阈值, 无需调整。
 -- ALTER SYSTEM SET data_storage_error_tolerance_time = '300s';  -- 不建议改动
+
+-- ---------------------------------------------------------------------
+--    为什么放宽 tolerance_time 是安全的 (源码论证):
+--
+--      if (current_ts >= error_ts || (sys_io_errno != 0 && fs_error_times >= 100)) {
+--        set_device_error();
+--      } else if (current_ts >= warn_ts || (sys_io_errno != 0 && fs_error_times >= 10)) {
+--        set_device_warning();
+--      }
+--
+--    "超时"与"报错"是 || 关系。真实坏盘几乎总是伴随 sys_io_errno != 0 (EIO 等),
+--    走右半支, 与 tolerance_time 无关 ->【放宽超时不会导致真实坏盘漏检】。
+--    (MAX_DETECT_READ_WARN_TIMES=10, MAX_DETECT_READ_ERROR_TIMES=100, ob_io_define.h)
+-- ---------------------------------------------------------------------
 
 
 -- ---------------------------------------------------------------------
@@ -96,27 +147,34 @@ WHERE  name IN (
 ORDER BY name, svr_ip;
 
 -- 预期结果:
---   log_storage_warning_trigger_percentage  20
 --   log_storage_warning_tolerance_time      60s
 --   data_storage_warning_tolerance_time     60s
---   _data_storage_io_timeout                60s
+--   log_storage_warning_trigger_percentage  0      (保持默认, 不要改)
+--   _data_storage_io_timeout                10s    (保持默认)
 --   data_storage_error_tolerance_time       300s   (未改动)
 
 
 -- =====================================================================
 -- 权衡说明(必须向使用方明确说明)
 --
---   放宽 *_tolerance_time 会延缓对【真实坏盘】的发现。因此:
---     a) 优先调整 log_storage_warning_trigger_percentage(改判定模型),
---        而非单纯调大超时 —— 前者不牺牲真实故障检出能力;
---     b) 保持 data_storage_error_tolerance_time 默认值作为兜底;
---     c) 配合平台侧磁盘健康监控, 形成双重保障。
+--   放宽 *_tolerance_time 只放宽了"超时"判定, 不影响"报错"判定:
+--     a) 磁盘返回 IO 错误(真实坏盘): 仍然 10 次 -> WARNING, 100 次 -> ERROR,
+--        与 tolerance_time 无关, 【不会漏检】;
+--     b) 磁盘完全无响应: data_storage_error_tolerance_time (300s) 兜底;
+--     c) 纯超时型慢盘(不报错只变慢): 检出会从 5s 延后到 60s —— 这是唯一的代价;
+--     d) 建议配合平台侧磁盘健康监控, 形成双重保障。
 --
--- 重要前提
+--   !! 不要调大 log_storage_warning_trigger_percentage 来"换判定模型" !!
+--   源码中它与 has_long_pending_io 是 || 关系(见本文件第 1 节),
+--   调大只会新增判定路径, 使检测更敏感。
 --
---   若 TEST-PLAN.md §5.1 判定 H2 成立(切主由 PALF 选举租约触发),
---   则本文件的参数调整【无法完全消除】4s 以上停顿导致的切主 ——
---   PALF 租约 = 4 * MAX_TST = 4s 在当前版本中为硬编码, 不可配置。 [源码]
---   此时必须依靠 L1(降低 OS 侧过早超时) + L2(降低条带暴露面)
---   + L5(leader 打散、应用幂等重试) 组合缓解。
+-- 关于 PALF 4s 硬编码租约
+--
+--   本方案的有效性【不依赖】PALF 租约可调:
+--   源码已确认切主走的是
+--     failure detector -> FailureLevel::FATAL
+--       -> PriorityV1::compare_fatal_failures_ -> 优先级降级 -> 主动让位
+--   这一路径, 而非"租约到期 -> 被动重新选举"。
+--   选举续约是纯内存 + RPC 的状态机, 存储抖动期间网络正常, 租约不会过期。
+--   详见 README.md §5.1。
 -- =====================================================================
