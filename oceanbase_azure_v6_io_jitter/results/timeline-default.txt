@@ -1,0 +1,163 @@
+===============================================================================
+ [实测] 默认参数 (log_storage_warning_tolerance_time=5s) 分档标定
+        权威事件流 — oceanbase.DBA_OB_SERVER_EVENT_HISTORY
+ 注意: 该表 timestamp 为本地时区 (UTC+8); VM 系统时钟为 UTC
+       标定 UTC 04:33:21 ~ 04:49:41  =>  表内 12:33:21 ~ 12:49:41
+ 注入: ob1 (10.20.1.11) 日志卷 vg_log-lv_log, dmsetup suspend N 秒
+ 负载: sysbench oltp_read_write, 16 线程, 全程持续
+===============================================================================
+
+### 各档注入时刻 (UTC)
+  档位 10s: start=2026-08-31 04:43:08 end=2026-08-31 04:43:18 actual=10.084s
+  档位 15s: start=2026-08-31 04:44:50 end=2026-08-31 04:45:05 actual=15.079s
+  档位 2s: start=2026-08-31 04:33:21 end=2026-08-31 04:33:24 actual=2.312s
+  档位 30s: start=2026-08-31 04:46:38 end=2026-08-31 04:47:08 actual=30.635s
+  档位 3s: start=2026-08-31 04:34:56 end=2026-08-31 04:35:00 actual=3.839s
+  档位 4s: start=2026-08-31 04:36:33 end=2026-08-31 04:36:38 actual=4.794s
+  档位 5s: start=2026-08-31 04:38:10 end=2026-08-31 04:38:16 actual=5.844s
+  档位 60s: start=2026-08-31 04:48:41 end=2026-08-31 04:49:41 actual=60.071s
+  档位 6s: start=2026-08-31 04:39:48 end=2026-08-31 04:39:55 actual=6.318s
+  档位 8s: start=2026-08-31 04:41:28 end=2026-08-31 04:41:36 actual=8.082s
+
+### 完整事件流
+12:38:15.857980  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:38:16.512256  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:38:16.607917  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:38:16.658466  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:38:16.808040  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:38:17.054095  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:38:18.014117  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:38:19.214754  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:39:54.016930  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:39:54.066202  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:39:54.341147  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:39:54.602567  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:39:55.217449  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:39:55.266869  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:39:55.341678  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:39:55.574287  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:39:55.588520  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:39:55.597521  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:39:55.599983  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:39:55.621344  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:39:56.504515  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:39:57.506852  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:39:57.515988  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:39:57.522301  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:39:57.523261  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:39:57.538314  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:41:33.176378  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:41:33.199995  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:41:33.225466  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:41:33.798616  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:41:34.642546  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:41:34.659989  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:41:34.675403  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:41:34.694277  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:41:34.726900  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:41:34.734143  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:41:34.741883  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:41:36.178156  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:41:36.201704  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:41:36.227271  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:41:37.008489  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:41:37.455736  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:41:37.462209  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:41:37.467278  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:41:37.470981  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:41:37.488696  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:41:38.817738  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:41:39.586097  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:43:13.485499  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:43:13.535749  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:43:13.660367  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:43:14.099251  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:43:15.393893  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:43:15.400743  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:43:15.407616  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:43:18.510330  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:43:18.528944  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:43:18.538659  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:43:18.553037  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:43:18.570496  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:43:18.663377  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:43:18.688381  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:43:19.514973  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:43:20.017428  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:43:20.027604  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:43:20.033954  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:43:21.167645  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:43:21.169882  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:43:21.317256  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:43:21.318367  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:44:55.896092  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:44:55.946336  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:44:56.121400  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:44:56.509592  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:44:57.086350  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:44:57.091083  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:44:57.101040  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:44:57.107583  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:44:57.110177  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:44:57.126969  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:44:57.141324  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:45:05.901981  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:45:05.927120  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:45:05.951940  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:45:07.009006  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:45:07.484586  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:45:07.498866  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:45:07.500068  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:45:08.672974  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:45:08.676131  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:45:08.813825  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:45:08.816165  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:46:43.259615  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:46:43.409986  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:46:43.785185  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:46:44.005001  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:46:44.546594  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:46:44.563495  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:46:44.563636  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:46:44.573559  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:46:44.586937  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:46:44.655388  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:46:44.657988  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:47:08.824907  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:47:08.874261  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:47:08.999391  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:47:09.511048  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:47:09.970270  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:47:10.099518  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:47:10.101159  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:47:11.669507  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:47:11.671399  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:47:11.810038  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:47:11.811593  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:48:46.330552  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:48:46.455990  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:48:46.481648  10.20.1.11  FAILURE_DETECTOR  clog    disk     hang            event     FAILURE_MODULE  LOG      FAILURE_TYPE  PROCESS  HANG
+12:48:47.009838  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:48:47.521496  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:48:47.530576  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:48:47.540286  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:48:47.542846  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:48:47.549728  10.20.1.12  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:48:47.560674  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+12:48:47.580478  10.20.1.11  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:49:41.262343  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:49:41.287895  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:49:41.313097  10.20.1.11  FAILURE_DETECTOR  REMOVE  FAILURE  FAILURE_MODULE  LOG       FAILURE_TYPE    PROCESS  HANG                   
+12:49:42.103148  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1001     LS_ID         1        
+12:49:42.103159  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1001     LS_ID         1        
+12:49:42.505126  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1        LS_ID         1        
+12:49:42.950258  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1        LS_ID         1        
+12:49:43.806704  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1001     
+12:49:43.808268  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1001     
+12:49:44.168711  10.20.1.11  ELECTION          change  leader   to              takeover  TENANT_ID       1002     LS_ID         1        
+12:49:44.170768  10.20.1.12  ELECTION          change  leader   to              revoke    TENANT_ID       1002     LS_ID         1        
+
+### observer.log 中对应的 DBA 级错误日志 (ob1)
+[2026-08-31 05:07:20.580532] INFO  [COORDINATOR] detect_palf_hang_failure_ (ob_failure_detector.cpp:367) [20876][T1_Occam][T1][Y0-0000000000000000-0-0] [lt=4] clog disk has recoverd, remove failure event(ret=0, clog_disk_hang_event={type:PROCESS HANG, module:LOG, info:clog disk hang event, level:FATAL})
+[2026-08-31 05:07:20.600296] INFO  [COORDINATOR] detect_palf_hang_failure_ (ob_failure_detector.cpp:367) [21555][T1002_Occam][T1002][Y0-0000000000000000-0-0] [lt=5] clog disk has recoverd, remove failure event(ret=0, clog_disk_hang_event={type:PROCESS HANG, module:LOG, info:clog disk hang event, level:FATAL})
+[2026-08-31 05:07:20.727127] INFO  [COORDINATOR] detect_palf_hang_failure_ (ob_failure_detector.cpp:367) [21908][T1001_Occam][T1001][Y0-0000000000000000-0-0] [lt=4] clog disk has recoverd, remove failure event(ret=0, clog_disk_hang_event={type:PROCESS HANG, module:LOG, info:clog disk hang event, level:FATAL})

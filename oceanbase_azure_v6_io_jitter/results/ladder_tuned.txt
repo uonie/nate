@@ -1,0 +1,20 @@
+===== [tuned] 10s  04:55:22 =====
+RESULT tag=tuned req=10s | INJECT dev=vg_log-lv_log req=10s start_utc=2026-08-31 04:55:24 end_utc=2026-08-31 04:55:34 actual=10.070s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=9 | max_p95_ms=15 | err=0 | 判定=无切主
+RESULT tag=tuned req=10s | INJECT dev=vg_log-lv_log req=10s start_utc=2026-08-31 04:55:24 end_utc=2026-08-31 04:55:34 actual=10.070s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=9 | max_p95_ms=15 | err=0 | 判定=无切主
+===== [tuned] 15s  04:57:04 =====
+RESULT tag=tuned req=15s | INJECT dev=vg_log-lv_log req=15s start_utc=2026-08-31 04:57:08 end_utc=2026-08-31 04:57:23 actual=15.080s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=15 | max_p95_ms=8 | err=1 | 判定=无切主
+RESULT tag=tuned req=15s | INJECT dev=vg_log-lv_log req=15s start_utc=2026-08-31 04:57:08 end_utc=2026-08-31 04:57:23 actual=15.080s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=15 | max_p95_ms=8 | err=1 | 判定=无切主
+===== [tuned] 30s  04:58:53 =====
+RESULT tag=tuned req=30s | INJECT dev=vg_log-lv_log req=30s start_utc=2026-08-31 04:58:56 end_utc=2026-08-31 04:59:26 actual=30.084s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=29 | max_p95_ms=12 | err=2 | 判定=无切主
+RESULT tag=tuned req=30s | INJECT dev=vg_log-lv_log req=30s start_utc=2026-08-31 04:58:56 end_utc=2026-08-31 04:59:26 actual=30.084s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=29 | max_p95_ms=12 | err=2 | 判定=无切主
+===== [tuned] 45s  05:00:56 =====
+RESULT tag=tuned req=45s | INJECT dev=vg_log-lv_log req=45s start_utc=2026-08-31 05:01:00 end_utc=2026-08-31 05:01:45 actual=45.078s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=52 | max_p95_ms=11 | err=4 | 判定=无切主
+RESULT tag=tuned req=45s | INJECT dev=vg_log-lv_log req=45s start_utc=2026-08-31 05:01:00 end_utc=2026-08-31 05:01:45 actual=45.078s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=52 | max_p95_ms=11 | err=4 | 判定=无切主
+===== [tuned] 60s  05:03:15 =====
+RESULT tag=tuned req=60s | INJECT dev=vg_log-lv_log req=60s start_utc=2026-08-31 05:03:18 end_utc=2026-08-31 05:04:18 actual=60.066s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=104 | max_p95_ms=0 | err=0 | 判定=无切主
+RESULT tag=tuned req=60s | INJECT dev=vg_log-lv_log req=60s start_utc=2026-08-31 05:03:18 end_utc=2026-08-31 05:04:18 actual=60.066s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=104 | max_p95_ms=0 | err=0 | 判定=无切主
+===== [tuned] 90s  05:05:48 =====
+RESULT tag=tuned req=90s | INJECT dev=vg_log-lv_log req=90s start_utc=2026-08-31 05:05:50 end_utc=2026-08-31 05:07:20 actual=90.069s | off_before=0 | hang_event=2 | takeover_off_ob1=4 | max_off=4 | tps0_sec=135 | max_p95_ms=0 | err=0 | 判定=切主
+RESULT tag=tuned req=90s | INJECT dev=vg_log-lv_log req=90s start_utc=2026-08-31 05:05:50 end_utc=2026-08-31 05:07:20 actual=90.069s | off_before=0 | hang_event=2 | takeover_off_ob1=4 | max_off=4 | tps0_sec=135 | max_p95_ms=0 | err=0 | 判定=切主
+===== LADDER tuned DONE 05:08:50 =====
+cat: /home/admin/results/ladder_tuned.txt: input file is output file

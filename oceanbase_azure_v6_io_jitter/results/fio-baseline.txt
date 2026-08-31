@@ -1,0 +1,50 @@
+# fio baseline on ob3 (Standard_D32s_v6, Rocky 9.8), PSSDv2 default provisioning
+# collected: 2026-08-31T05:36:43Z
+# fio: fio-3.35
+# cmd: fio --size=2G --direct=1 --ioengine=libaio --runtime=30 --time_based --group_reporting --norandommap
+#   data_*: /data/1 (vg_data-lv_data, 6x64G stripe 128k)
+#   clog_*: /data/log1 (vg_log-lv_log, 4x64G stripe 128k)
+
+=== data_randread_4k ===
+  read: IOPS=20.3k, BW=79.3MiB/s (83.2MB/s)(2385MiB/30066msec)
+     lat (usec): min=85, max=576657, avg=12606.53, stdev=19282.44
+    clat percentiles (usec):
+     | 99.00th=[ 60031], 99.50th=[ 63177], 99.90th=[202376], 99.95th=[337642],
+  lat (usec)   : 100=0.05%, 250=1.09%, 500=4.25%, 750=5.99%, 1000=5.55%
+  lat (msec)   : 2=16.13%, 4=16.78%, 10=15.33%, 20=11.34%, 50=19.10%
+  lat (msec)   : 100=4.26%, 250=0.06%, 500=0.08%, 750=0.01%
+=== data_randwrite_4k ===
+  write: IOPS=18.4k, BW=72.0MiB/s (75.5MB/s)(2172MiB/30164msec); 0 zone resets
+     lat (usec): min=167, max=594223, avg=13845.45, stdev=22604.53
+    clat percentiles (usec):
+     | 99.00th=[ 71828], 99.50th=[ 74974], 99.90th=[183501], 99.95th=[304088],
+  lat (usec)   : 250=0.96%, 500=1.24%, 750=7.76%, 1000=7.68%
+  lat (msec)   : 2=25.30%, 4=16.01%, 10=11.79%, 20=5.38%, 50=12.96%
+  lat (msec)   : 100=10.79%, 250=0.06%, 500=0.07%, 750=0.01%
+=== data_seqwrite_128k ===
+  write: IOPS=6481, BW=810MiB/s (850MB/s)(23.7GiB/30015msec); 0 zone resets
+     lat (usec): min=306, max=540814, avg=9873.14, stdev=14742.98
+    clat percentiles (usec):
+     | 99.00th=[ 16581], 99.50th=[ 16581], 99.90th=[295699], 99.95th=[408945],
+  lat (usec)   : 500=0.40%, 750=0.18%, 1000=0.57%
+  lat (msec)   : 2=3.05%, 4=9.89%, 10=41.43%, 20=44.19%, 50=0.07%
+  lat (msec)   : 100=0.03%, 250=0.07%, 500=0.12%, 750=0.01%
+=== clog_seqwrite_128k ===
+  write: IOPS=4275, BW=534MiB/s (560MB/s)(15.7GiB/30043msec); 0 zone resets
+     lat (usec): min=301, max=724838, avg=14961.19, stdev=27010.93
+    clat percentiles (usec):
+     | 99.00th=[ 41157], 99.50th=[ 82314], 99.90th=[446694], 99.95th=[497026],
+  lat (usec)   : 500=2.57%, 750=0.46%, 1000=1.11%
+  lat (msec)   : 2=3.10%, 4=8.01%, 10=45.37%, 20=19.27%, 50=19.56%
+  lat (msec)   : 100=0.05%, 250=0.13%, 500=0.31%, 750=0.05%
+=== clog_randwrite_4k ===
+  write: IOPS=12.6k, BW=49.3MiB/s (51.6MB/s)(1517MiB/30800msec); 0 zone resets
+     lat (usec): min=165, max=1141.4k, avg=20131.83, stdev=57127.96
+    clat percentiles (usec):
+     | 99.00th=[325059], 99.50th=[446694], 99.90th=[692061], 99.95th=[801113],
+  lat (usec)   : 250=7.45%, 500=8.16%, 750=5.86%, 1000=4.56%
+  lat (msec)   : 2=16.98%, 4=11.59%, 10=13.64%, 20=10.14%, 50=9.72%
+  lat (msec)   : 100=9.85%, 250=0.66%, 500=1.07%, 750=0.26%, 1000=0.06%
+  lat (msec)   : 2000=0.01%
+=== DONE ===
+

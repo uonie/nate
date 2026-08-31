@@ -1,0 +1,10 @@
+===== 稳态: tolerance=60s (调优后) =====
+STEADY tag=tuned60 samples=150 tps_avg=790.5 tps_p50=715.0 tps_min=0.0 p95lat_avg=278.23 p95lat_p50=11.24 p95lat_max=3208.88
+===== 补测 tuned 60s / 90s (带负载) =====
+===== 恢复默认 tolerance=5s =====
+name	value
+data_storage_warning_tolerance_time	5s
+log_storage_warning_tolerance_time	5s
+===== 稳态: tolerance=5s (默认) =====
+STEADY tag=default5 samples=150 tps_avg=789.9 tps_p50=737.1 tps_min=0.0 p95lat_avg=253.43 p95lat_p50=11.65 p95lat_max=3040.14
+===== DONE 05:26:25 =====

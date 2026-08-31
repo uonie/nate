@@ -1,0 +1,6 @@
+# 测试原始数据不入库
+data/*
+!data/README.md
+
+# 生成物
+__pycache__/

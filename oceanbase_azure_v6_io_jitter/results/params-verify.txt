@@ -1,0 +1,88 @@
+===============================================================================
+ [实测] OceanBase 4.3.5.5 参数默认值核验 — 真实集群导出
+ 采集: 2026-08-31T04:39:58Z UTC
+===============================================================================
+
+### 0. 版本与集群状态
+version
+5.7.25-OceanBase_CE-v4.3.5.5
+*************************** 1. row ***************************
+                id: 1
+              zone: zone1
+            svr_ip: 10.20.1.11
+          svr_port: 2882
+            status: ACTIVE
+start_service_time: 2026-08-31 12:12:08.887644
+     build_version: 4.3.5.5_105020072026012721-f90fefed90fb2fb3c36dd71359aef6f4edd65f7c(Jan 27 2026 22:42:30)
+*************************** 2. row ***************************
+                id: 2
+              zone: zone2
+            svr_ip: 10.20.1.12
+          svr_port: 2882
+            status: ACTIVE
+start_service_time: 2026-08-31 12:12:09.613572
+     build_version: 4.3.5.5_105020072026012721-f90fefed90fb2fb3c36dd71359aef6f4edd65f7c(Jan 27 2026 22:42:30)
+*************************** 3. row ***************************
+                id: 3
+              zone: zone3
+            svr_ip: 10.20.1.13
+          svr_port: 2882
+            status: ACTIVE
+start_service_time: 2026-08-31 12:12:09.213208
+     build_version: 4.3.5.5_105020072026012721-f90fefed90fb2fb3c36dd71359aef6f4edd65f7c(Jan 27 2026 22:42:30)
+
+### 1. 与磁盘故障判定直接相关的参数 (CLUSTER 级)
+name	value	scope	data_type	section
+data_storage_error_tolerance_time	300s	CLUSTER	TIME	OBSERVER
+data_storage_warning_tolerance_time	5s	CLUSTER	TIME	OBSERVER
+enable_rebalance	True	TENANT	BOOL	LOAD_BALANCE
+enable_rebalance	True	TENANT	BOOL	LOAD_BALANCE
+enable_rebalance	True	TENANT	BOOL	LOAD_BALANCE
+enable_transfer	True	TENANT	BOOL	LOAD_BALANCE
+enable_transfer	True	TENANT	BOOL	LOAD_BALANCE
+enable_transfer	True	TENANT	BOOL	LOAD_BALANCE
+log_disk_throttling_percentage	60	TENANT	INT	LOGSERVICE
+log_disk_throttling_percentage	60	TENANT	INT	LOGSERVICE
+log_disk_throttling_percentage	60	TENANT	INT	LOGSERVICE
+log_disk_utilization_limit_threshold	95	TENANT	INT	LOGSERVICE
+log_disk_utilization_limit_threshold	95	TENANT	INT	LOGSERVICE
+log_disk_utilization_limit_threshold	95	TENANT	INT	LOGSERVICE
+log_disk_utilization_threshold	80	TENANT	INT	LOGSERVICE
+log_disk_utilization_threshold	80	TENANT	INT	LOGSERVICE
+log_disk_utilization_threshold	80	TENANT	INT	LOGSERVICE
+log_storage_warning_tolerance_time	5s	CLUSTER	TIME	LOGSERVICE
+_data_storage_io_timeout	10s	CLUSTER	TIME	OBSERVER
+
+### 2. 租户级参数 (tenant obtenant)
+tenant_name	name	value
+META$1002	freeze_trigger_percentage	20
+META$1002	writing_throttling_trigger_percentage	60
+obtenant	freeze_trigger_percentage	20
+obtenant	writing_throttling_trigger_percentage	60
+sys	freeze_trigger_percentage	20
+sys	writing_throttling_trigger_percentage	60
+
+### 3. 关键核实: log_storage_warning_trigger_percentage 在 4.3.5.5 中是否存在?
+--- 3a. GV$OB_PARAMETERS 中的条目数 (期望 0) ---
+cnt_trigger_percentage
+0
+--- 3b. 对照组: _data_storage_io_timeout 的条目数 (期望 3, 每节点一条) ---
+cnt_control_group
+3
+--- 3c. 尝试设置该参数 (期望报错 ERROR 5099 System config unknown) ---
+ERROR 5099 (42000) at line 1: System config unknown
+--- 3d. 对照组: 设置一个确实存在的参数 (期望成功, 随即改回) ---
+    (无输出 = 执行成功)
+
+### 4. 日志流 leader 分布 (复刻客户 leader 集中状态)
+tenant_id	ls_id	svr_ip	role
+1	1	10.20.1.11	LEADER
+1001	1	10.20.1.11	LEADER
+1002	1	10.20.1.11	LEADER
+1002	1001	10.20.1.11	LEADER
+
+### 5. 租户 PRIMARY_ZONE
+tenant_id	tenant_name	tenant_type	primary_zone	locality
+1	sys	SYS	zone1;zone2,zone3	FULL{1}@zone1, FULL{1}@zone2, FULL{1}@zone3
+1001	META$1002	META	zone1;zone2,zone3	FULL{1}@zone1, FULL{1}@zone2, FULL{1}@zone3
+1002	obtenant	USER	zone1;zone2,zone3	FULL{1}@zone1, FULL{1}@zone2, FULL{1}@zone3
