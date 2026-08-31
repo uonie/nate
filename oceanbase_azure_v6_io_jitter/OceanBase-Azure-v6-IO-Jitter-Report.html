@@ -95,13 +95,13 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </head>
 <body>
 <div class="layout">
-<nav class="toc"><div class="toc-head">分析报告</div><ul><li><a href="#d0-摘要">摘要</a></li><li><a href="#d0-结论速览">结论速览</a></li><li><a href="#d0-0-证据等级规范">0. 证据等级规范</a></li><li><a href="#d0-1-背景">1. 背景</a></li><li><a href="#d0-2-客户环境现状">2. 客户环境现状</a></li><li style="padding-left:14px"><a href="#d0-2-1-计算与存储-现场">2.1 计算与存储 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-2-磁盘布局-现场">2.2 磁盘布局 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-3-集群拓扑-现场">2.3 集群拓扑 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-4-已正确配置的项-现场">2.4 已正确配置的项 [现场]</a></li><li><a href="#d0-3-核心分析-三条判定链路与超时层级">3. 核心分析：三条判定链路与超时层级</a></li><li style="padding-left:14px"><a href="#d0-3-1-超时层级全景">3.1 超时层级全景</a></li><li style="padding-left:14px"><a href="#d0-3-2-链路-a-数据盘故障判定">3.2 链路 A：数据盘故障判定</a></li><li style="padding-left:14px"><a href="#d0-3-3-链路-b-日志盘故障判定-最激进">3.3 链路 B：日志盘故障判定（最激进）</a></li><li style="padding-left:14px"><a href="#d0-3-3-1-源码修正-两种模式是-或-关系-不是-替换-关系">3.3.1 ⚠️ 源码修正：两种模式是「或」关系，不是「替换」关系</a></li><li style="padding-left:14px"><a href="#d0-3-3-2-判定结果如何变成切主">3.3.2 判定结果如何变成切主</a></li><li style="padding-left:14px"><a href="#d0-3-4-链路-c-palf-选举租约-硬编码-不可调">3.4 链路 C：PALF 选举租约（硬编码，不可调）</a></li><li style="padding-left:14px"><a href="#d0-3-5-现场日志逐条对照-现场">3.5 现场日志逐条对照 [现场]</a></li><li><a href="#d0-4-影响放大因素">4. 影响放大因素</a></li><li style="padding-left:14px"><a href="#d0-4-1-lvm-多盘条带化-现场">4.1 LVM 多盘条带化 [现场]</a></li><li style="padding-left:14px"><a href="#d0-4-2-leader-高度集中-现场">4.2 leader 高度集中 [现场]</a></li><li style="padding-left:14px"><a href="#d0-4-3-clog-卷水位偏高-现场">4.3 clog 卷水位偏高 [现场]</a></li><li><a href="#d0-5-关键结论-能否通过调参完全吸收">5. 关键结论：能否通过调参完全吸收</a></li><li style="padding-left:14px"><a href="#d0-5-1-结论-可以吸收到-60s-量级-触发路径不经过-palf-硬编码租约">5.1 结论：可以吸收到 60s 量级，触发路径不经过 PALF 硬编码租约</a></li><li style="padding-left:14px"><a href="#d0-5-2-完全吸收-的准确含义与边界">5.2 &quot;完全吸收&quot;的准确含义与边界</a></li><li style="padding-left:14px"><a href="#d0-5-3-已由源码与官方文档确定的结论">5.3 已由源码与官方文档确定的结论</a></li><li><a href="#d0-6-测试方案">6. 测试方案</a></li><li><a href="#d0-7-实测结果">7. 实测结果</a></li><li><a href="#d0-8-最佳实践配置清单">8. 最佳实践配置清单</a></li><li style="padding-left:14px"><a href="#d0-l1-os-内核-rocky-linux-9-8">L1 — OS / 内核（Rocky Linux 9.8）</a></li><li style="padding-left:14px"><a href="#d0-l2-存储布局">L2 — 存储布局</a></li><li style="padding-left:14px"><a href="#d0-l3-oceanbase-判定模型-关键层">L3 — OceanBase 判定模型（关键层）</a></li><li style="padding-left:14px"><a href="#d0-l4-缓冲与节流">L4 — 缓冲与节流</a></li><li style="padding-left:14px"><a href="#d0-l5-架构与接入层">L5 — 架构与接入层</a></li><li><a href="#d0-9-下一步行动">9. 下一步行动</a></li><li style="padding-left:14px"><a href="#d0-9-1-可立即执行-不需要测试环境">9.1 可立即执行（不需要测试环境）</a></li><li style="padding-left:14px"><a href="#d0-9-2-需要测试环境">9.2 需要测试环境</a></li><li><a href="#d0-10-附录-完整引用清单">10. 附录：完整引用清单</a></li><li style="padding-left:14px"><a href="#d0-官方文档">官方文档</a></li><li style="padding-left:14px"><a href="#d0-上游内核源码">上游内核源码</a></li><li style="padding-left:14px"><a href="#d0-源码">源码</a></li><li style="padding-left:14px"><a href="#d0-社区-非官方-仅作旁证">社区（非官方，仅作旁证）</a></li><li style="padding-left:14px"><a href="#d0-现场材料">现场材料</a></li></ul><div class="toc-head">测试执行方案</div><ul><li><a href="#d1-1-测试目标">1. 测试目标</a></li><li><a href="#d1-2-测试环境">2. 测试环境</a></li><li style="padding-left:14px"><a href="#d1-2-1-集群">2.1 集群</a></li><li style="padding-left:14px"><a href="#d1-2-2-磁盘两组对照">2.2 磁盘两组对照</a></li><li style="padding-left:14px"><a href="#d1-2-3-拓扑对照">2.3 拓扑对照</a></li><li style="padding-left:14px"><a href="#d1-2-4-负载">2.4 负载</a></li><li><a href="#d1-3-三个磁盘域独立测试">3. 三个磁盘域独立测试</a></li><li><a href="#d1-4-注入方法">4. 注入方法</a></li><li style="padding-left:14px"><a href="#d1-4-1-主手段-dmsetup-suspend-resume">4.1 主手段：dmsetup suspend/resume</a></li><li style="padding-left:14px"><a href="#d1-4-2-对照手段">4.2 对照手段</a></li><li style="padding-left:14px"><a href="#d1-4-3-注入粒度">4.3 注入粒度</a></li><li style="padding-left:14px"><a href="#d1-4-4-时长档位">4.4 时长档位</a></li><li><a href="#d1-5-场景矩阵">5. 场景矩阵</a></li><li style="padding-left:14px"><a href="#d1-5-1-tolerance_time-门槛标定实验-最高优先级">5.1 tolerance_time 门槛标定实验（最高优先级）</a></li><li><a href="#d1-6-分层调优与贡献度分析">6. 分层调优与贡献度分析</a></li><li style="padding-left:14px"><a href="#d1-6-1-执行顺序">6.1 执行顺序</a></li><li><a href="#d1-7-观测指标与采集">7. 观测指标与采集</a></li><li style="padding-left:14px"><a href="#d1-7-1-业务面">7.1 业务面</a></li><li style="padding-left:14px"><a href="#d1-7-2-oceanbase-面">7.2 OceanBase 面</a></li><li style="padding-left:14px"><a href="#d1-7-3-os-面">7.3 OS 面</a></li><li style="padding-left:14px"><a href="#d1-7-4-时间同步">7.4 时间同步</a></li><li><a href="#d1-8-完全吸收-的判定标准">8. &quot;完全吸收&quot;的判定标准</a></li><li><a href="#d1-9-执行检查清单">9. 执行检查清单</a></li><li style="padding-left:14px"><a href="#d1-9-1-环境搭建">9.1 环境搭建</a></li><li style="padding-left:14px"><a href="#d1-9-2-每个场景执行">9.2 每个场景执行</a></li><li style="padding-left:14px"><a href="#d1-9-3-安全注意">9.3 安全注意</a></li><li><a href="#d1-10-已知风险与局限">10. 已知风险与局限</a></li></ul><div class="toc-head">脚本说明</div><ul><li><a href="#d2-目录">目录</a></li><li><a href="#d2-快速上手">快速上手</a></li><li style="padding-left:14px"><a href="#d2-1-环境准备">1. 环境准备</a></li><li style="padding-left:14px"><a href="#d2-2-若要做单盘注入-场景-s8-必须在建-lvm-之前">2. 若要做单盘注入(场景 S8) —— 必须在建 LVM 之前</a></li><li style="padding-left:14px"><a href="#d2-3-执行一轮场景">3. 执行一轮场景</a></li><li style="padding-left:14px"><a href="#d2-4-tolerance_time-门槛标定实验-最高优先级">4. tolerance_time 门槛标定实验（最高优先级）</a></li><li><a href="#d2-安全机制">安全机制</a></li><li><a href="#d2-方法论局限-报告中必须声明">方法论局限（报告中必须声明）</a></li></ul></nav>
+<nav class="toc"><div class="toc-head">分析报告</div><ul><li><a href="#d0-摘要">摘要</a></li><li><a href="#d0-结论速览">结论速览</a></li><li><a href="#d0-0-证据等级规范">0. 证据等级规范</a></li><li><a href="#d0-1-背景">1. 背景</a></li><li><a href="#d0-2-客户环境现状">2. 客户环境现状</a></li><li style="padding-left:14px"><a href="#d0-2-1-计算与存储-现场">2.1 计算与存储 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-2-磁盘布局-现场">2.2 磁盘布局 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-3-集群拓扑-现场">2.3 集群拓扑 [现场]</a></li><li style="padding-left:14px"><a href="#d0-2-4-已正确配置的项-现场">2.4 已正确配置的项 [现场]</a></li><li><a href="#d0-3-核心分析-三条判定链路与超时层级">3. 核心分析：三条判定链路与超时层级</a></li><li style="padding-left:14px"><a href="#d0-3-1-超时层级全景">3.1 超时层级全景</a></li><li style="padding-left:14px"><a href="#d0-3-2-链路-a-数据盘故障判定">3.2 链路 A：数据盘故障判定</a></li><li style="padding-left:14px"><a href="#d0-3-3-链路-b-日志盘故障判定-最激进">3.3 链路 B：日志盘故障判定（最激进）</a></li><li style="padding-left:14px"><a href="#d0-3-3-1-源码修正-两种模式是-或-关系-不是-替换-关系">3.3.1 ⚠️ 源码修正：两种模式是「或」关系，不是「替换」关系</a></li><li style="padding-left:14px"><a href="#d0-3-3-2-判定结果如何变成切主">3.3.2 判定结果如何变成切主</a></li><li style="padding-left:14px"><a href="#d0-3-4-链路-c-palf-选举租约-硬编码-不可调">3.4 链路 C：PALF 选举租约（硬编码，不可调）</a></li><li style="padding-left:14px"><a href="#d0-3-5-现场日志逐条对照-现场">3.5 现场日志逐条对照 [现场]</a></li><li><a href="#d0-4-影响放大因素">4. 影响放大因素</a></li><li style="padding-left:14px"><a href="#d0-4-1-lvm-多盘条带化-现场">4.1 LVM 多盘条带化 [现场]</a></li><li style="padding-left:14px"><a href="#d0-4-2-leader-高度集中-现场">4.2 leader 高度集中 [现场]</a></li><li style="padding-left:14px"><a href="#d0-4-3-clog-卷水位偏高-现场">4.3 clog 卷水位偏高 [现场]</a></li><li><a href="#d0-5-关键结论-能否通过调参完全吸收">5. 关键结论：能否通过调参完全吸收</a></li><li style="padding-left:14px"><a href="#d0-5-1-结论-参数空间足够-触发路径不经过-palf-硬编码租约">5.1 结论：参数空间足够，触发路径不经过 PALF 硬编码租约</a></li><li style="padding-left:14px"><a href="#d0-5-2-完全吸收-的准确含义与边界">5.2 &quot;完全吸收&quot;的准确含义与边界</a></li><li style="padding-left:14px"><a href="#d0-5-3-已由源码与官方文档确定的结论">5.3 已由源码与官方文档确定的结论</a></li><li><a href="#d0-6-测试方案">6. 测试方案</a></li><li><a href="#d0-7-实测结果">7. 实测结果</a></li><li><a href="#d0-8-最佳实践配置清单">8. 最佳实践配置清单</a></li><li style="padding-left:14px"><a href="#d0-l1-os-内核-rocky-linux-9-8">L1 — OS / 内核（Rocky Linux 9.8）</a></li><li style="padding-left:14px"><a href="#d0-l2-存储布局">L2 — 存储布局</a></li><li style="padding-left:14px"><a href="#d0-l3-oceanbase-判定模型-关键层">L3 — OceanBase 判定模型（关键层）</a></li><li style="padding-left:14px"><a href="#d0-l4-缓冲与节流">L4 — 缓冲与节流</a></li><li style="padding-left:14px"><a href="#d0-l5-架构与接入层">L5 — 架构与接入层</a></li><li><a href="#d0-9-下一步行动">9. 下一步行动</a></li><li style="padding-left:14px"><a href="#d0-9-1-可立即执行-不需要测试环境">9.1 可立即执行（不需要测试环境）</a></li><li style="padding-left:14px"><a href="#d0-9-2-需要测试环境">9.2 需要测试环境</a></li><li><a href="#d0-10-附录-完整引用清单">10. 附录：完整引用清单</a></li><li style="padding-left:14px"><a href="#d0-官方文档">官方文档</a></li><li style="padding-left:14px"><a href="#d0-上游内核源码">上游内核源码</a></li><li style="padding-left:14px"><a href="#d0-源码">源码</a></li><li style="padding-left:14px"><a href="#d0-社区-非官方-仅作旁证">社区（非官方，仅作旁证）</a></li><li style="padding-left:14px"><a href="#d0-现场材料">现场材料</a></li></ul><div class="toc-head">测试执行方案</div><ul><li><a href="#d1-1-测试目标">1. 测试目标</a></li><li><a href="#d1-2-测试环境">2. 测试环境</a></li><li style="padding-left:14px"><a href="#d1-2-1-集群">2.1 集群</a></li><li style="padding-left:14px"><a href="#d1-2-2-磁盘两组对照">2.2 磁盘两组对照</a></li><li style="padding-left:14px"><a href="#d1-2-3-拓扑对照">2.3 拓扑对照</a></li><li style="padding-left:14px"><a href="#d1-2-4-负载">2.4 负载</a></li><li><a href="#d1-3-三个磁盘域独立测试">3. 三个磁盘域独立测试</a></li><li><a href="#d1-4-注入方法">4. 注入方法</a></li><li style="padding-left:14px"><a href="#d1-4-1-主手段-dmsetup-suspend-resume">4.1 主手段：dmsetup suspend/resume</a></li><li style="padding-left:14px"><a href="#d1-4-2-对照手段">4.2 对照手段</a></li><li style="padding-left:14px"><a href="#d1-4-3-注入粒度">4.3 注入粒度</a></li><li style="padding-left:14px"><a href="#d1-4-4-时长档位">4.4 时长档位</a></li><li><a href="#d1-5-场景矩阵">5. 场景矩阵</a></li><li style="padding-left:14px"><a href="#d1-5-1-tolerance_time-门槛标定实验-最高优先级">5.1 tolerance_time 门槛标定实验（最高优先级）</a></li><li><a href="#d1-6-分层调优与贡献度分析">6. 分层调优与贡献度分析</a></li><li style="padding-left:14px"><a href="#d1-6-1-执行顺序">6.1 执行顺序</a></li><li><a href="#d1-7-观测指标与采集">7. 观测指标与采集</a></li><li style="padding-left:14px"><a href="#d1-7-1-业务面">7.1 业务面</a></li><li style="padding-left:14px"><a href="#d1-7-2-oceanbase-面">7.2 OceanBase 面</a></li><li style="padding-left:14px"><a href="#d1-7-3-os-面">7.3 OS 面</a></li><li style="padding-left:14px"><a href="#d1-7-4-时间同步">7.4 时间同步</a></li><li><a href="#d1-8-完全吸收-的判定标准">8. &quot;完全吸收&quot;的判定标准</a></li><li style="padding-left:14px"><a href="#d1-8-1-分档预期与实测记录表">8.1 分档预期与实测记录表</a></li><li style="padding-left:14px"><a href="#d1-8-2-副作用记录表-必填-全部待实测">8.2 副作用记录表（必填，全部待实测）</a></li><li><a href="#d1-9-执行检查清单">9. 执行检查清单</a></li><li style="padding-left:14px"><a href="#d1-9-1-环境搭建">9.1 环境搭建</a></li><li style="padding-left:14px"><a href="#d1-9-2-每个场景执行">9.2 每个场景执行</a></li><li style="padding-left:14px"><a href="#d1-9-3-安全注意">9.3 安全注意</a></li><li><a href="#d1-10-已知风险与局限">10. 已知风险与局限</a></li></ul><div class="toc-head">脚本说明</div><ul><li><a href="#d2-目录">目录</a></li><li><a href="#d2-快速上手">快速上手</a></li><li style="padding-left:14px"><a href="#d2-1-环境准备">1. 环境准备</a></li><li style="padding-left:14px"><a href="#d2-2-若要做单盘注入-场景-s8-必须在建-lvm-之前">2. 若要做单盘注入(场景 S8) —— 必须在建 LVM 之前</a></li><li style="padding-left:14px"><a href="#d2-3-执行一轮场景">3. 执行一轮场景</a></li><li style="padding-left:14px"><a href="#d2-4-tolerance_time-门槛标定实验-最高优先级">4. tolerance_time 门槛标定实验（最高优先级）</a></li><li><a href="#d2-安全机制">安全机制</a></li><li><a href="#d2-方法论局限-报告中必须声明">方法论局限（报告中必须声明）</a></li></ul></nav>
 <main>
 <header class="doc-head">
   <h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
   <div class="meta">
     OceanBase 4.3.5.5 &nbsp;·&nbsp; Azure Standard D32s v6 + Premium SSD v2
-    &nbsp;·&nbsp; 生成时间 2026-08-31 09:53
+    &nbsp;·&nbsp; 生成时间 2026-08-31 11:23
   </div>
 </header>
 <section class=""><h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
@@ -114,6 +114,11 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 <h2 id="d0-摘要">摘要</h2>
 <p>OceanBase 在云上块存储环境中对<strong>瞬时 I/O 高延迟事件</strong>的敏感度显著高于其他常见中间件。本文通过<strong>源码级</strong>分析定位故障判定链路，并给出可证伪的测试方案与最佳实践配置。</p>
 <p><strong>核心结论</strong></p>
+<blockquote>
+<p>下列 8 条全部为 <strong><span class="badge b-source">源码</span> / <span class="badge b-official">官方</span> / <span class="badge b-field">现场</span></strong> 级事实或由其直接推出的<strong>代码层结论</strong>。
+本文<strong>不包含任何未经实测的性能数字或运行时行为断言</strong> —— 所有"某档位下会不会切主、
+代价多大"一类的问题，均以可证伪的预测形式放在 <code>TEST-PLAN.md</code> §8，标注 <span class="badge b-todo">待验证</span>，等待实测填写。</p>
+</blockquote>
 <ol>
 <li>
 <p><strong>触发切主的门槛已被源码精确定位，不是估计值。</strong> 判定链路有且只有两条，门槛分别是<strong>日志盘 5s</strong>、<strong>数据盘 10s + 5s ≈ 15s</strong>（§3.2 / §3.3）。客户现场 14 次慢 I/O 的 <strong>p50 = 10.2s、max = 11.3s、14/14 全部超过 5s</strong>，<strong>必然击穿日志盘门槛</strong>。</p>
@@ -167,13 +172,13 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 <tr>
 <td>Q2</td>
 <td>默认参数下抖动会造成什么影响</td>
-<td><strong>确定会切主</strong>。日志盘门槛 5s，数据盘门槛约 15s；现场 14/14 次慢 I/O 均 &gt; 5s（p50 10.2s）</td>
+<td><strong>源码层面确定会触发磁盘故障判定</strong>：日志盘门槛 5s，数据盘约 15s；现场 14/14 次慢 I/O 均 &gt; 5s（p50 10.2s）<span class="badge b-field">现场</span>。判定 → FATAL → 优先级降级的代码路径已逐行核实 <span class="badge b-source">源码</span>。<strong>"实际切主"这一步还取决于运行时条件（其他副本状态等），需实测确认</strong></td>
 <td>S2 / S8 / F1</td>
 </tr>
 <tr>
 <td>Q3</td>
 <td><strong>能否通过调参完全吸收</strong></td>
-<td><strong>可以吸收到 60s 量级，且不牺牲真实坏盘检出。</strong> 关键参数是两个 <code>*_tolerance_time</code>（上限均为 300s）。<strong>触发路径不经过 PALF 4s 硬编码租约</strong>，故不存在"调不动的天花板"</td>
+<td><strong>源码层面确定参数空间足够</strong>：门槛完全由两个 <code>*_tolerance_time</code> 决定（上限均 300s），<strong>且不经过 PALF 4s 硬编码租约</strong>，不存在"调不动的天花板" <span class="badge b-source">源码</span>。<strong>"60s 是否够用、代价多大"须由 <code>TEST-PLAN.md</code> §5.1 + §8 实测标定</strong></td>
 <td>S7 / S3 / S9</td>
 </tr>
 <tr>
@@ -228,6 +233,10 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </table>
 <blockquote>
 <p><strong>不要做</strong>：调大 <code>log_storage_warning_trigger_percentage</code>（会让检测更敏感）；调大 <code>data_storage_error_tolerance_time</code>（300s 是真实坏盘的兜底线，应保留）。</p>
+<p><strong>⚠️ 上表的"确定"与"待定"分界</strong>：
+<strong>调哪个参数、往哪个方向调 = 源码已确定</strong>（这是代码事实，不需要实测）。
+<strong>调到 60s 是否恰好合适、业务侧代价多大 = 必须实测</strong>（<code>TEST-PLAN.md</code> §5.1 标定实验 + §8 记录表）。
+本文不提供任何未经实测的性能数字或行为断言。</p>
 </blockquote>
 <p><strong>确证用 SQL</strong> —— 一条查询即可判定当时是否真的发生了磁盘故障判定。源码中 <code>ObFailureDetector</code> 的每一次判定都会写入 <code>__all_server_event_history</code> <span class="badge b-source">源码</span>：</p>
 <div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">SELECT</span><span style="color: #BBB"> </span>gmt_create,<span style="color: #BBB"> </span>svr_ip,<span style="color: #BBB"> </span>module,<span style="color: #BBB"> </span>event,<span style="color: #BBB"> </span>name1,<span style="color: #BBB"> </span>value1,<span style="color: #BBB"> </span>name2,<span style="color: #BBB"> </span>value2
@@ -283,6 +292,37 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 </tbody>
 </table>
 <blockquote>
+<p><strong>关于"源码推论"</strong>：由 <span class="badge b-source">源码</span> 事实<strong>推导出的预期运行时行为</strong>（例如"停顿 6s 会触发切主"）
+<strong>不等同于 <span class="badge b-source">源码</span> 本身</strong>，也<strong>绝不是 <span class="badge b-measured">实测</span></strong>。本文一律将其归入 <strong><span class="badge b-todo">待验证</span></strong>，
+并在文中显式标注"预期 / 推论"字样。<strong>在实测数据产出前，任何推论都不得表述为既成事实。</strong>
+集中体现在 <code>TEST-PLAN.md</code> §8.1 —— 该表左侧两列是可证伪的预测，右侧两列才是数据。</p>
+<p><strong>本文的"确定"与"待定"分界</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>已确定（不需要实测）</th>
+<th>待实测确认</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>判定链路的<strong>代码路径</strong>与<strong>参数如何参与判定</strong>（<span class="badge b-source">源码</span> 逐行核实）</td>
+<td>具体档位下的<strong>实际行为</strong>（是否切主、切主耗时）</td>
+</tr>
+<tr>
+<td>参数的默认值、取值范围、是否可动态生效（<span class="badge b-source">源码</span>）</td>
+<td><code>60s</code> 是否为最优取值</td>
+</tr>
+<tr>
+<td>官方文档的事实性表述（<span class="badge b-official">官方</span>）</td>
+<td>业务侧的实际错误率、TPS 恢复曲线</td>
+</tr>
+<tr>
+<td>客户现场日志中的慢 I/O 统计（<span class="badge b-field">现场</span>，脚本实算）</td>
+<td>条带布局 A/B 的性能差异</td>
+</tr>
+</tbody>
+</table>
 <p><strong>本文档已剔除的不可靠断言</strong>：分析初期曾出现"Azure 平台 120s 才判定 NVMe 故障"的说法。经核查 Microsoft Learn 的 <code>enable-nvme-interface</code> 与 <code>enable-nvme-faqs</code> <strong>均无此表述</strong>，该数字仅见于第三方 KB 转述。<strong>已全部移除</strong>，相关论证改用官方原文的定性表述。</p>
 </blockquote>
 <p>OceanBase 源码引用统一基于 <code>oceanbase/oceanbase</code> commit <strong><code>fa399038f7edf3313575bd49d8c4a7cc64825c2e</code></strong>。</p>
@@ -1147,7 +1187,7 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 <p>两者叠加，提高了在抖动窗口内命中慢 I/O 的概率。</p>
 <hr />
 <h2 id="d0-5-关键结论-能否通过调参完全吸收">5. 关键结论：能否通过调参完全吸收</h2>
-<h3 id="d0-5-1-结论-可以吸收到-60s-量级-触发路径不经过-palf-硬编码租约">5.1 结论：可以吸收到 60s 量级，触发路径不经过 PALF 硬编码租约</h3>
+<h3 id="d0-5-1-结论-参数空间足够-触发路径不经过-palf-硬编码租约">5.1 结论：参数空间足够，触发路径不经过 PALF 硬编码租约</h3>
 <p>切主存在<strong>两条机制截然不同的路径</strong>：</p>
 <table>
 <thead>
@@ -1195,46 +1235,49 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 <blockquote>
 <p><strong>对 10~30s 量级的存储抖动，切主由路径 ① 触发，而路径 ① 的门槛完全由 <code>*_tolerance_time</code> 决定（可调至 300s）。</strong>
 <strong>"4s 硬编码租约"不是本案的天花板。参数空间是足够的。</strong></p>
+<p><strong>以上是<span class="badge b-source">源码</span>级结论——关于"代码怎么写的"。</strong>
+<strong>它不等于"调到 60s 就一定没事"。</strong> 后者属运行时行为，必须由 <code>TEST-PLAN.md</code> §5.1 标定实验
+与 §8 记录表实测得出。在实测数据产出前，本文不给出任何具体档位下的行为断言。</p>
 </blockquote>
 <h3 id="d0-5-2-完全吸收-的准确含义与边界">5.2 "完全吸收"的准确含义与边界</h3>
-<p>调参能做到的和不能做到的，必须说清楚：</p>
+<p>调参能做到的和不能做到的，必须说清楚。<strong>下表是源码推论 <span class="badge b-todo">待验证</span>，用于指导实测，不是实测结果：</strong></p>
 <table>
 <thead>
 <tr>
 <th>现象</th>
 <th>调参前（默认）</th>
-<th>调参后（tolerance=60s）</th>
+<th>调参后（tolerance=60s）· 源码推论</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>抖动期间事务延迟升高</td>
 <td>是</td>
-<td><strong>是（无法消除）</strong></td>
+<td><strong>预期仍是（无法消除）</strong></td>
 </tr>
 <tr>
 <td>抖动期间部分事务超时报错</td>
 <td>是</td>
-<td><strong>取决于业务超时设置，见下</strong></td>
+<td><strong>取决于业务超时设置，需实测</strong></td>
 </tr>
 <tr>
 <td><strong>判定磁盘故障 → 切主</strong></td>
 <td><strong>是</strong></td>
-<td><strong>否（抖动 &lt; 60s 时）</strong></td>
+<td><strong>预期否（抖动 &lt; 60s 时）</strong> ← <strong>本方案要验证的核心命题</strong></td>
 </tr>
 <tr>
 <td>切主导致的连接中断与事务回滚</td>
 <td>是</td>
-<td><strong>否</strong></td>
+<td><strong>预期否</strong></td>
 </tr>
 <tr>
 <td>切主后 RTO 与主从切换抖动</td>
 <td>是</td>
-<td><strong>否</strong></td>
+<td><strong>预期否</strong></td>
 </tr>
 </tbody>
 </table>
-<p><strong>准确表述：调参不能消除抖动本身，但能把"抖动 → 判定坏盘 → 切主 → 集群级故障"降级为"抖动 → 短暂卡顿 → 自行恢复"。</strong></p>
+<p><strong>准确表述：调参不能消除抖动本身；源码分析表明它能把"抖动 → 判定坏盘 → 切主 → 集群级故障"降级为"抖动 → 短暂卡顿 → 自行恢复"，此命题待 §8.1 第 6s 行实测确认。</strong></p>
 <p>这正是 Redis / RocketMQ / ES / TiDB 在同一平台上的表现形态 —— 它们没有秒级坏盘判定器，所以只表现为阻塞。</p>
 <p><strong>仍需实测确认的量（不影响上述定性结论）：</strong></p>
 <table>
@@ -1264,15 +1307,43 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 </tbody>
 </table>
 <h3 id="d0-5-3-已由源码与官方文档确定的结论">5.3 已由源码与官方文档确定的结论</h3>
+<p>以下均为<strong>代码/文档事实</strong>，不依赖实测：</p>
 <ol>
-<li><strong>默认参数一定会在 5s 处触发日志盘故障判定</strong> <span class="badge b-source">源码</span>。现场 14/14 次慢 I/O 全部 &gt; 5s。</li>
+<li><strong>判定门槛的位置</strong>：日志盘为 <code>now - last_working_time &gt; log_storage_warning_tolerance_time</code>（默认 5s）<span class="badge b-source">源码</span>。现场 14/14 次慢 I/O 全部 &gt; 5s <span class="badge b-field">现场</span>，即<strong>门槛确实被跨过</strong>。</li>
 <li><strong>⚠️ <code>log_storage_warning_trigger_percentage</code> 必须保持 0。</strong> 调大只会新增判定路径使检测更敏感（§3.3.1）<span class="badge b-source">源码</span>。</li>
-<li><strong>调大 <code>tolerance_time</code> 不会导致真实坏盘漏检</strong>。返回错误码的路径（<code>fs_error_times &gt;= 10/100</code>）与时间阈值是 <code>||</code> 关系，独立生效 <span class="badge b-source">源码</span>。</li>
-<li><strong>数据盘链路不会导致停机</strong>。10~30s 停顿远未触及 <code>data_storage_error_tolerance_time</code>（300s）<span class="badge b-source">源码</span>。</li>
-<li><strong>一次抖动的影响会持续至少 60s</strong>。数据盘 WARNING 状态的清除条件是 <code>period &gt; read_failure_black_list_interval_</code>（默认 60s）<span class="badge b-source">源码</span>。</li>
-<li><strong>3F 架构本身具备兜底能力</strong>，但兜底不等于无损：切主有 RTO，在途事务会失败。<strong>若三节点同时抖动，多数派同时失效，架构无法兜底</strong>。</li>
+<li><strong>调大 <code>tolerance_time</code> 不改变"报错"判定路径</strong>。返回错误码的路径（<code>fs_error_times &gt;= 10/100</code>）与时间阈值在同一 <code>if</code> 中以 <code>||</code> 并列，互不影响 <span class="badge b-source">源码</span>。</li>
+<li><strong><code>data_storage_error_tolerance_time</code> 默认 300s</strong>，10~30s 量级的停顿在时间上远未触及该阈值 <span class="badge b-source">源码</span>。</li>
+<li><strong>数据盘 WARNING 状态的清除条件</strong>是 <code>period &gt; read_failure_black_list_interval_</code>（默认 60s）<span class="badge b-source">源码</span>，即状态位不会随停顿结束立即复位。</li>
 <li><strong>所有相关 OB 参数均为 <code>DYNAMIC_EFFECTIVE</code></strong>，可在线调整，无需重启 <span class="badge b-source">源码</span>。</li>
+<li><strong>3F 三副本的多数派是 2/3</strong> —— 若三节点同时受损，多数派同时失效，<strong>任何参数都无法兜底</strong>（架构事实）。</li>
 </ol>
+<p><strong>以下属源码推论 <span class="badge b-todo">待验证</span>，需由 <code>TEST-PLAN.md</code> §8 实测确认：</strong></p>
+<table>
+<thead>
+<tr>
+<th>推论</th>
+<th>验证场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>默认参数下 6s 停顿会实际发生切主</td>
+<td>§8.1 第 6s 行（默认参数列）</td>
+</tr>
+<tr>
+<td><code>tolerance_time=60s</code> 后同样的 6s 停顿不再切主</td>
+<td>§8.1 第 6s 行（调优后列）</td>
+</tr>
+<tr>
+<td>调参不引入稳态性能代价</td>
+<td>§8.2 稳态 TPS 行</td>
+</tr>
+<tr>
+<td>调参不延后真实坏盘（报错型）的检出</td>
+<td>§8.2 <code>dm-flakey</code> 行</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="d0-6-测试方案">6. 测试方案</h2>
 <p>完整可执行方案见 <a href="TEST-PLAN.md"><code>TEST-PLAN.md</code></a>，脚本见 <a href="scripts/"><code>scripts/</code></a>。要点：</p>
@@ -1401,19 +1472,27 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 </tbody>
 </table>
 <blockquote>
-<p><strong>⚠️ <code>tuned</code> 与 OB 官方要求存在冲突，需现场核实。</strong> RHEL 9 在虚拟机上的默认 tuned profile 是 <code>virtual-guest</code> <span class="badge b-official">官方</span>，其配置为 [官方，tuned 上游仓库]：
-<code>ini
-[main]
-include=throughput-performance
-[vm]
-dirty_bytes = 30%          # 内核默认 dirty_ratio 为 20%
-[sysctl]
-vm.swappiness = 30         # OB 官方要求 0</code>
-两点风险：
-1. <strong><code>vm.swappiness = 30</code> 会覆盖 <code>/etc/sysctl.conf</code> 中的 <code>0</code></strong>，与 OB 官方要求冲突。客户 OS 盘上有 4G swap，一旦触发换页，OS 盘抖动将直接放大为进程停顿。
-2. <strong><code>dirty_bytes = 30%</code></strong>：在 128 GiB 内存的 D32s v6 上约合 <strong>38 GB</strong> 脏页阈值，远高于内核默认的 20%。回写风暴的峰值 I/O 量更大，会加长停顿窗口。</p>
-<p>现场核实命令：<code>tuned-adm active</code>、<code>sysctl vm.swappiness vm.dirty_ratio vm.dirty_background_ratio</code>。</p>
+<p><strong>⚠️ <code>tuned</code> 与 OB 官方要求存在冲突，需现场核实。</strong> RHEL 9 在虚拟机上的默认 tuned profile 是 <code>virtual-guest</code> <span class="badge b-official">官方</span>。</p>
 </blockquote>
+<p>其上游定义为 [官方，<code>redhat-performance/tuned</code> 仓库]：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">[main]</span>
+<span style="color: #4070A0">include</span><span style="color: #666">=</span><span style="color: #4070A0">throughput-performance</span>
+<span style="color: #007020; font-weight: bold">[vm]</span>
+<span style="color: #4070A0">dirty_bytes</span><span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">30%</span><span style="color: #BBB">          </span><span style="color: #60A0B0; font-style: italic"># 内核默认 dirty_ratio 为 20%</span>
+<span style="color: #007020; font-weight: bold">[sysctl]</span>
+<span style="color: #4070A0">vm.swappiness</span><span style="color: #BBB"> </span><span style="color: #666">=</span><span style="color: #BBB"> </span><span style="color: #4070A0">30</span><span style="color: #BBB">         </span><span style="color: #60A0B0; font-style: italic"># OB 官方要求 0</span>
+</code></pre></div>
+
+<p>两点风险：</p>
+<ol>
+<li><strong><code>vm.swappiness = 30</code> 会覆盖 <code>/etc/sysctl.conf</code> 中的 <code>0</code></strong>，与 OB 官方要求冲突。客户 OS 盘上有 4G swap，一旦触发换页，OS 盘抖动将直接放大为进程停顿。</li>
+<li><strong><code>dirty_bytes = 30%</code></strong>：在 128 GiB 内存的 D32s v6 上约合 <strong>38 GB</strong> 脏页阈值，远高于内核默认的 20%。回写风暴的峰值 I/O 量更大，会加长停顿窗口。</li>
+</ol>
+<p>现场核实命令：</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>tuned-adm<span style="color: #BBB"> </span>active
+sysctl<span style="color: #BBB"> </span>vm.swappiness<span style="color: #BBB"> </span>vm.dirty_ratio<span style="color: #BBB"> </span>vm.dirty_background_ratio
+</code></pre></div>
+
 <p><strong>设置方式（Rocky Linux 9 / RHEL 9）：</strong></p>
 <p>NVMe 驱动通常在 initramfs 阶段加载（根文件系统位于 NVMe 盘上），因此<strong>仅写 <code>/etc/modprobe.d/</code> 不足以生效，必须重建 initramfs</strong>；更稳妥的做法是<strong>两者都做</strong>。</p>
 <div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic"># 方式一：内核命令行（推荐，最可靠）</span>
@@ -2499,82 +2578,182 @@ dmsetup<span style="color: #BBB"> </span>resume<span style="color: #BBB"> </span
 <li><strong>应用侧零报错、无连接中断</strong>；</li>
 <li><strong>仅出现与停顿时长同量级的延迟毛刺，停顿结束后 TPS 立即回到基线（≥95%）</strong>。</li>
 </ol>
-<p>分档记录结论：</p>
+<h3 id="d1-8-1-分档预期与实测记录表">8.1 分档预期与实测记录表</h3>
+<blockquote>
+<p><strong>⚠️ 本表左侧两列是「待验证的假设」，不是数据</strong></p>
+<p>"源码推论"列由 README §3.2 / §3.3 / §5.1 的源码分析推导而来，属 <strong><span class="badge b-todo">待验证</span></strong> 等级，
+<strong>禁止作为结论对外引用</strong>。它的唯一用途是<strong>给出可证伪的预测</strong>——
+实测跑出来若与预测不符，说明源码分析有误，必须回溯修正。</p>
+<p>"实测"列在执行 §5 场景后据实填写，并附原始数据文件路径。<strong>空着就是还没测，不要填猜测值。</strong></p>
+</blockquote>
 <table>
 <thead>
 <tr>
 <th>停顿时长</th>
-<th>默认参数</th>
-<th>调优后</th>
-<th>结论分类</th>
+<th>默认参数（5s）<br>源码推论 <span class="badge b-todo">待验证</span></th>
+<th>默认参数<br><strong>实测</strong></th>
+<th>调优后（60s）<br>源码推论 <span class="badge b-todo">待验证</span></th>
+<th>调优后<br><strong>实测</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>2s</td>
-<td></td>
-<td></td>
-<td>完全吸收 / 部分收敛 / 无法吸收</td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>4s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期无切主（PALF 租约走 RPC，不受磁盘影响）</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>5s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期临界（判定条件为 <code>&gt;</code> 严格大于）</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>6s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期切主（日志盘 <code>has_long_pending_io</code>）</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>8s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期切主（日志盘）</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>10s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期切主（日志盘；数据盘开始计时）</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>15s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期切主（日志盘 + 数据盘 WARNING 临界 10+5）</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>20s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期切主（日志盘 + 数据盘 WARNING）</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>30s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期切主（同上）</td>
+<td><em>未测</em></td>
+<td>预期无切主</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>60s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期切主（同上）</td>
+<td><em>未测</em></td>
+<td>预期临界（<code>&gt;</code> 严格大于）</td>
+<td><em>未测</em></td>
 </tr>
 <tr>
 <td>120s</td>
-<td></td>
-<td></td>
-<td></td>
+<td>预期切主（同上）</td>
+<td><em>未测</em></td>
+<td>预期切主</td>
+<td><em>未测</em></td>
+</tr>
+<tr>
+<td>300s+</td>
+<td>预期切主，且可能进入 ERROR（<code>data_storage_error_tolerance_time</code>）</td>
+<td><em>未测</em></td>
+<td>预期切主，且可能进入 ERROR</td>
+<td><em>未测</em></td>
+</tr>
+</tbody>
+</table>
+<p><strong>实测列的填写口径</strong>：只填三种值 —— <code>无切主</code> / <code>切主</code> / <code>停机</code>，并在备注中附
+<code>DBA_OB_SERVER_EVENT_HISTORY</code> 的对应记录与原始数据目录。<strong>不得填写推测或"应该"。</strong></p>
+<p><strong>结论分类</strong>（每档在实测完成后判定）：</p>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>完全吸收</strong></td>
+<td>§8 开头三条判定标准全部满足</td>
+</tr>
+<tr>
+<td><strong>部分收敛</strong></td>
+<td>无切主，但业务侧有报错或 TPS 恢复滞后</td>
+</tr>
+<tr>
+<td><strong>无法吸收</strong></td>
+<td>仍发生切主或停机</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>本表最关键的一行是 6s</strong>：源码推论认为默认参数下会切主、调优后不会。
+<strong>这一行的实测结果直接决定 Q3（"能否通过调参完全吸收"）的答案</strong> ——
+在跑出这一行之前，Q3 的答案只能表述为"源码分析表明可以，待实测确认"。</p>
+</blockquote>
+<h3 id="d1-8-2-副作用记录表-必填-全部待实测">8.2 副作用记录表（必填，全部待实测）</h3>
+<p>调优不能只看"切主没了"，还要看代价。<strong>下表全部为待测项，无任何预填值：</strong></p>
+<table>
+<thead>
+<tr>
+<th>观测项</th>
+<th>默认参数（实测）</th>
+<th>调优后（实测）</th>
+<th>为什么要测</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>抖动期间 P99 延迟峰值</td>
+<td><em>未测</em></td>
+<td><em>未测</em></td>
+<td>验证"调参不改变抖动本身"这一表述是否成立</td>
+</tr>
+<tr>
+<td>抖动期间业务错误数</td>
+<td><em>未测</em></td>
+<td><em>未测</em></td>
+<td>取决于 <code>ob_query_timeout</code> 与连接池设置，决定 L5 建议</td>
+</tr>
+<tr>
+<td>抖动结束到 TPS 回基线的时间</td>
+<td><em>未测</em></td>
+<td><em>未测</em></td>
+<td>量化"省掉切主 RTO"的实际收益</td>
+</tr>
+<tr>
+<td>稳态 TPS（无注入）</td>
+<td><em>未测</em></td>
+<td><em>未测</em></td>
+<td>确认参数变更没有引入稳态性能代价</td>
+</tr>
+<tr>
+<td>模拟真实坏盘（<code>dm-flakey</code> 报错）的检出时间</td>
+<td><em>未测</em></td>
+<td><em>未测</em></td>
+<td><strong>验证安全性论据</strong>：源码认为错误次数路径不受 <code>tolerance_time</code> 影响，需实证</td>
 </tr>
 </tbody>
 </table>
