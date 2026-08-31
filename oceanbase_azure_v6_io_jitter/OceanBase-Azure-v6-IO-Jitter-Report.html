@@ -101,7 +101,7 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
   <h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
   <div class="meta">
     OceanBase 4.3.5.5 &nbsp;·&nbsp; Azure Standard D32s v6 + Premium SSD v2
-    &nbsp;·&nbsp; 生成时间 2026-08-31 11:23
+    &nbsp;·&nbsp; 生成时间 2026-08-31 11:26
   </div>
 </header>
 <section class=""><h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
@@ -607,17 +607,17 @@ ObFailureDetector::detect_data_disk_io_failure_()
 <p><strong>WARNING 状态有最短保持期。</strong> <code>get_device_health_status()</code> 中清除 WARNING 需要 <code>period &gt; read_failure_black_list_interval_</code>，该值在 <code>ObIOConfig</code> 中默认 <strong>60s</strong> <span class="badge b-source">源码</span>。<strong>即一次 15s 的读停顿，会让该节点在优先级比较中"带伤"至少 60s。</strong></p>
 </li>
 <li>
-<p><strong>返回错误码的真实坏盘走独立快速通道，不受 <code>tolerance_time</code> 影响：</strong>
-   <code>cpp
-   if (current_ts &gt;= error_ts || (sys_io_errno != 0 &amp;&amp; fs_error_times &gt;= MAX_DETECT_READ_ERROR_TIMES)) {
-     set_device_error();
-   } else if (current_ts &gt;= warn_ts || (sys_io_errno != 0 &amp;&amp; fs_error_times &gt;= MAX_DETECT_READ_WARN_TIMES)) {
-     set_device_warning();
-   }</code>
-   <code>MAX_DETECT_READ_WARN_TIMES = 10</code>、<code>MAX_DETECT_READ_ERROR_TIMES = 100</code>（<code>src/share/io/ob_io_define.h</code>）<span class="badge b-source">源码</span>。
-   <strong>这是"调大 tolerance_time 不会导致真实坏盘漏检"的直接源码证据</strong>：<code>sys_io_errno != 0</code> 这一支与时间阈值是 <code>||</code> 关系。</p>
+<p><strong>返回错误码的真实坏盘走独立快速通道，不受 <code>tolerance_time</code> 影响。</strong> 见下方源码片段：<code>MAX_DETECT_READ_WARN_TIMES = 10</code>、<code>MAX_DETECT_READ_ERROR_TIMES = 100</code>（<code>src/share/io/ob_io_define.h</code>）<span class="badge b-source">源码</span>。<strong>这是"调大 <code>tolerance_time</code> 不会导致真实坏盘漏检"的直接源码证据</strong>：<code>sys_io_errno != 0</code> 这一支与时间阈值是 <code>||</code> 关系，互不影响。</p>
 </li>
 </ol>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #60A0B0; font-style: italic">// src/share/io/ob_io_struct.cpp — handle_retry_task_()</span>
+<span style="color: #007020; font-weight: bold">if</span><span style="color: #BBB"> </span>(current_ts<span style="color: #BBB"> </span><span style="color: #666">&gt;=</span><span style="color: #BBB"> </span>error_ts<span style="color: #BBB"> </span><span style="color: #666">||</span><span style="color: #BBB"> </span>(sys_io_errno<span style="color: #BBB"> </span><span style="color: #666">!=</span><span style="color: #BBB"> </span><span style="color: #40A070">0</span><span style="color: #BBB"> </span><span style="color: #666">&amp;&amp;</span><span style="color: #BBB"> </span>fs_error_times<span style="color: #BBB"> </span><span style="color: #666">&gt;=</span><span style="color: #BBB"> </span>MAX_DETECT_READ_ERROR_TIMES))<span style="color: #BBB"> </span>{
+<span style="color: #BBB">  </span>set_device_error();
+}<span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">else</span><span style="color: #BBB"> </span><span style="color: #007020; font-weight: bold">if</span><span style="color: #BBB"> </span>(current_ts<span style="color: #BBB"> </span><span style="color: #666">&gt;=</span><span style="color: #BBB"> </span>warn_ts<span style="color: #BBB"> </span><span style="color: #666">||</span><span style="color: #BBB"> </span>(sys_io_errno<span style="color: #BBB"> </span><span style="color: #666">!=</span><span style="color: #BBB"> </span><span style="color: #40A070">0</span><span style="color: #BBB"> </span><span style="color: #666">&amp;&amp;</span><span style="color: #BBB"> </span>fs_error_times<span style="color: #BBB"> </span><span style="color: #666">&gt;=</span><span style="color: #BBB"> </span>MAX_DETECT_READ_WARN_TIMES))<span style="color: #BBB"> </span>{
+<span style="color: #BBB">  </span>set_device_warning();
+}
+</code></pre></div>
+
 <p>OceanBase 官方文档对两个状态的描述 <span class="badge b-official">官方</span>：</p>
 <ul>
 <li><code>data_storage_warning_tolerance_time</code>：<em>"探测线程会将该数据盘状态设置为 <code>WARNING</code>，该状态会</em><em>触发切主</em><em>等事件以正常服务业务请求。"</em></li>
@@ -1215,15 +1215,16 @@ VM 级上限先封顶。条带化在此换到的只有 <strong>4~6 倍的抖动�
 </table>
 <p><strong>判定依据（源码，非推测）：</strong></p>
 <ol>
-<li>
-<p><strong>路径 ① 的完整链条已逐行核实</strong>，且<strong>全程不经过选举租约</strong>：
-   <code>is_clog_disk_hang() / get_device_health_status()
-        → add_failure_event(FailureLevel::FATAL)
-        → PriorityV1::refresh_()  读取 fatal_failures_
-        → PriorityV1::compare()   在 compare_fatal_failures_ 处判负
-        → leader coordinator 主动切主</code>
-   这是<strong>优先级比较驱动的主动让位</strong>，租约在此期间始终正常续约。</p>
-</li>
+<li><strong>路径 ① 的完整链条已逐行核实</strong>，且<strong>全程不经过选举租约</strong>（链条见下方）。这是<strong>优先级比较驱动的主动让位</strong>，租约在此期间始终正常续约。</li>
+</ol>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>is_clog_disk_hang() / get_device_health_status()
+     → add_failure_event(FailureLevel::FATAL)
+     → PriorityV1::refresh_()  读取 fatal_failures_
+     → PriorityV1::compare()   在 compare_fatal_failures_ 处判负
+     → leader coordinator 主动切主
+</code></pre></div>
+
+<ol start="2">
 <li>
 <p><strong>路径 ② 的触发条件是"副本间 RPC 消息中断"，而非磁盘慢。</strong> PALF 选举模块（<code>election_acceptor.cpp</code> / <code>election_proposer.cpp</code>）的续约处理是<strong>纯内存 + RPC</strong> 的状态机，不含磁盘 I/O 调用 <span class="badge b-source">源码</span>。存储抖动期间网络正常，租约不会过期。</p>
 </li>
@@ -1664,7 +1665,7 @@ uname<span style="color: #BBB"> </span>-r<span style="color: #BBB">             
 <tr>
 <td>应用侧</td>
 <td>幂等重试 + 合理的连接池超时</td>
-<td>切主 RTO 期间的在途事务必然失败</td>
+<td>切主 RTO 期间在途事务会失败，需应用侧承接</td>
 </tr>
 </tbody>
 </table>

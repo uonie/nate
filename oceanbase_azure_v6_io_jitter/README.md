@@ -260,16 +260,16 @@ ObFailureDetector::detect_data_disk_io_failure_()
 
 3. **WARNING 状态有最短保持期。** `get_device_health_status()` 中清除 WARNING 需要 `period > read_failure_black_list_interval_`，该值在 `ObIOConfig` 中默认 **60s** [源码]。**即一次 15s 的读停顿，会让该节点在优先级比较中"带伤"至少 60s。**
 
-4. **返回错误码的真实坏盘走独立快速通道，不受 `tolerance_time` 影响：**
-   ```cpp
-   if (current_ts >= error_ts || (sys_io_errno != 0 && fs_error_times >= MAX_DETECT_READ_ERROR_TIMES)) {
-     set_device_error();
-   } else if (current_ts >= warn_ts || (sys_io_errno != 0 && fs_error_times >= MAX_DETECT_READ_WARN_TIMES)) {
-     set_device_warning();
-   }
-   ```
-   `MAX_DETECT_READ_WARN_TIMES = 10`、`MAX_DETECT_READ_ERROR_TIMES = 100`（`src/share/io/ob_io_define.h`）[源码]。
-   **这是"调大 tolerance_time 不会导致真实坏盘漏检"的直接源码证据**：`sys_io_errno != 0` 这一支与时间阈值是 `||` 关系。
+4. **返回错误码的真实坏盘走独立快速通道，不受 `tolerance_time` 影响。** 见下方源码片段：`MAX_DETECT_READ_WARN_TIMES = 10`、`MAX_DETECT_READ_ERROR_TIMES = 100`（`src/share/io/ob_io_define.h`）[源码]。**这是"调大 `tolerance_time` 不会导致真实坏盘漏检"的直接源码证据**：`sys_io_errno != 0` 这一支与时间阈值是 `||` 关系，互不影响。
+
+```cpp
+// src/share/io/ob_io_struct.cpp — handle_retry_task_()
+if (current_ts >= error_ts || (sys_io_errno != 0 && fs_error_times >= MAX_DETECT_READ_ERROR_TIMES)) {
+  set_device_error();
+} else if (current_ts >= warn_ts || (sys_io_errno != 0 && fs_error_times >= MAX_DETECT_READ_WARN_TIMES)) {
+  set_device_warning();
+}
+```
 
 OceanBase 官方文档对两个状态的描述 [官方]：
 
@@ -616,15 +616,15 @@ VM 级上限先封顶。条带化在此换到的只有 **4~6 倍的抖动暴露�
 
 **判定依据（源码，非推测）：**
 
-1. **路径 ① 的完整链条已逐行核实**，且**全程不经过选举租约**：
-   ```
-   is_clog_disk_hang() / get_device_health_status()
-        → add_failure_event(FailureLevel::FATAL)
-        → PriorityV1::refresh_()  读取 fatal_failures_
-        → PriorityV1::compare()   在 compare_fatal_failures_ 处判负
-        → leader coordinator 主动切主
-   ```
-   这是**优先级比较驱动的主动让位**，租约在此期间始终正常续约。
+1. **路径 ① 的完整链条已逐行核实**，且**全程不经过选举租约**（链条见下方）。这是**优先级比较驱动的主动让位**，租约在此期间始终正常续约。
+
+```
+is_clog_disk_hang() / get_device_health_status()
+     → add_failure_event(FailureLevel::FATAL)
+     → PriorityV1::refresh_()  读取 fatal_failures_
+     → PriorityV1::compare()   在 compare_fatal_failures_ 处判负
+     → leader coordinator 主动切主
+```
 
 2. **路径 ② 的触发条件是"副本间 RPC 消息中断"，而非磁盘慢。** PALF 选举模块（`election_acceptor.cpp` / `election_proposer.cpp`）的续约处理是**纯内存 + RPC** 的状态机，不含磁盘 I/O 调用 [源码]。存储抖动期间网络正常，租约不会过期。
 
@@ -870,7 +870,7 @@ if (current_ts >= error_ts || (sys_io_errno != 0 && fs_error_times >= 100)) {
 |---|---|---|
 | leader 分布 | **打散**，避免多数日志流 leader 集中于单节点 | §4.2 |
 | `enable_rebalance` / `enable_transfer` | **谨慎评估**后再开启 | 开启会引入后台搬迁 I/O，可能反增抖动命中面 [待实测确认] |
-| 应用侧 | 幂等重试 + 合理的连接池超时 | 切主 RTO 期间的在途事务必然失败 |
+| 应用侧 | 幂等重试 + 合理的连接池超时 | 切主 RTO 期间在途事务会失败，需应用侧承接 |
 
 ---
 
