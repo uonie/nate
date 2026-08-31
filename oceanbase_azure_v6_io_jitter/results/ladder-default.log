@@ -1,0 +1,31 @@
+===== [default] 2s  04:33:19 =====
+RESULT tag=default req=2s | INJECT dev=vg_log-lv_log req=2s start_utc=2026-08-31 04:33:21 end_utc=2026-08-31 04:33:24 actual=2.312s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=3 | max_p95_ms=3511 | err=0 | 判定=无切主
+===== [default] 3s  04:34:54 =====
+RESULT tag=default req=3s | INJECT dev=vg_log-lv_log req=3s start_utc=2026-08-31 04:34:56 end_utc=2026-08-31 04:35:00 actual=3.839s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=5 | max_p95_ms=2680 | err=0 | 判定=无切主
+===== [default] 4s  04:36:30 =====
+RESULT tag=default req=4s | INJECT dev=vg_log-lv_log req=4s start_utc=2026-08-31 04:36:33 end_utc=2026-08-31 04:36:38 actual=4.794s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=4 | max_p95_ms=2539 | err=0 | 判定=无切主
+===== [default] 5s  04:38:08 =====
+RESULT tag=default req=5s | INJECT dev=vg_log-lv_log req=5s start_utc=2026-08-31 04:38:10 end_utc=2026-08-31 04:38:16 actual=5.844s | off_before=0 | hang_event=2 | takeover_off_ob1=1 | max_off=1 | tps0_sec=9 | max_p95_ms=3152 | err=0 | 判定=切主
+===== [default] 6s  04:39:46 =====
+RESULT tag=default req=6s | INJECT dev=vg_log-lv_log req=6s start_utc=2026-08-31 04:39:48 end_utc=2026-08-31 04:39:55 actual=6.318s | off_before=0 | hang_event=3 | takeover_off_ob1=3 | max_off=3 | tps0_sec=5 | max_p95_ms=6836 | err=0 | 判定=切主
+===== [default] 8s  04:41:25 =====
+RESULT tag=default req=8s | INJECT dev=vg_log-lv_log req=8s start_utc=2026-08-31 04:41:28 end_utc=2026-08-31 04:41:36 actual=8.082s | off_before=0 | hang_event=3 | takeover_off_ob1=4 | max_off=4 | tps0_sec=9 | max_p95_ms=6836 | err=8 | 判定=切主
+===== [default] 10s  04:43:06 =====
+RESULT tag=default req=10s | INJECT dev=vg_log-lv_log req=10s start_utc=2026-08-31 04:43:08 end_utc=2026-08-31 04:43:18 actual=10.084s | off_before=0 | hang_event=3 | takeover_off_ob1=4 | max_off=4 | tps0_sec=5 | max_p95_ms=6836 | err=4 | 判定=切主
+===== [default] 15s  04:44:48 =====
+RESULT tag=default req=15s | INJECT dev=vg_log-lv_log req=15s start_utc=2026-08-31 04:44:50 end_utc=2026-08-31 04:45:05 actual=15.079s | off_before=0 | hang_event=3 | takeover_off_ob1=4 | max_off=4 | tps0_sec=6 | max_p95_ms=6960 | err=2 | 判定=切主
+===== [default] 30s  04:46:35 =====
+RESULT tag=default req=30s | INJECT dev=vg_log-lv_log req=30s start_utc=2026-08-31 04:46:38 end_utc=2026-08-31 04:47:08 actual=30.635s | off_before=0 | hang_event=3 | takeover_off_ob1=4 | max_off=4 | tps0_sec=6 | max_p95_ms=746 | err=1 | 判定=切主
+===== [default] 60s  04:48:38 =====
+RESULT tag=default req=60s | INJECT dev=vg_log-lv_log req=60s start_utc=2026-08-31 04:48:41 end_utc=2026-08-31 04:49:41 actual=60.071s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=4 | tps0_sec=7 | max_p95_ms=59 | err=0 | 判定=切主
+===== LADDER default DONE 04:51:11 =====
+RESULT tag=default req=2s | INJECT dev=vg_log-lv_log req=2s start_utc=2026-08-31 04:33:21 end_utc=2026-08-31 04:33:24 actual=2.312s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=3 | max_p95_ms=3511 | err=0 | 判定=无切主
+RESULT tag=default req=3s | INJECT dev=vg_log-lv_log req=3s start_utc=2026-08-31 04:34:56 end_utc=2026-08-31 04:35:00 actual=3.839s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=5 | max_p95_ms=2680 | err=0 | 判定=无切主
+RESULT tag=default req=4s | INJECT dev=vg_log-lv_log req=4s start_utc=2026-08-31 04:36:33 end_utc=2026-08-31 04:36:38 actual=4.794s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=0 | tps0_sec=4 | max_p95_ms=2539 | err=0 | 判定=无切主
+RESULT tag=default req=5s | INJECT dev=vg_log-lv_log req=5s start_utc=2026-08-31 04:38:10 end_utc=2026-08-31 04:38:16 actual=5.844s | off_before=0 | hang_event=2 | takeover_off_ob1=1 | max_off=1 | tps0_sec=9 | max_p95_ms=3152 | err=0 | 判定=切主
+RESULT tag=default req=6s | INJECT dev=vg_log-lv_log req=6s start_utc=2026-08-31 04:39:48 end_utc=2026-08-31 04:39:55 actual=6.318s | off_before=0 | hang_event=3 | takeover_off_ob1=3 | max_off=3 | tps0_sec=5 | max_p95_ms=6836 | err=0 | 判定=切主
+RESULT tag=default req=8s | INJECT dev=vg_log-lv_log req=8s start_utc=2026-08-31 04:41:28 end_utc=2026-08-31 04:41:36 actual=8.082s | off_before=0 | hang_event=3 | takeover_off_ob1=4 | max_off=4 | tps0_sec=9 | max_p95_ms=6836 | err=8 | 判定=切主
+RESULT tag=default req=10s | INJECT dev=vg_log-lv_log req=10s start_utc=2026-08-31 04:43:08 end_utc=2026-08-31 04:43:18 actual=10.084s | off_before=0 | hang_event=3 | takeover_off_ob1=4 | max_off=4 | tps0_sec=5 | max_p95_ms=6836 | err=4 | 判定=切主
+RESULT tag=default req=15s | INJECT dev=vg_log-lv_log req=15s start_utc=2026-08-31 04:44:50 end_utc=2026-08-31 04:45:05 actual=15.079s | off_before=0 | hang_event=3 | takeover_off_ob1=4 | max_off=4 | tps0_sec=6 | max_p95_ms=6960 | err=2 | 判定=切主
+RESULT tag=default req=30s | INJECT dev=vg_log-lv_log req=30s start_utc=2026-08-31 04:46:38 end_utc=2026-08-31 04:47:08 actual=30.635s | off_before=0 | hang_event=3 | takeover_off_ob1=4 | max_off=4 | tps0_sec=6 | max_p95_ms=746 | err=1 | 判定=切主
+RESULT tag=default req=60s | INJECT dev=vg_log-lv_log req=60s start_utc=2026-08-31 04:48:41 end_utc=2026-08-31 04:49:41 actual=60.071s | off_before=0 | hang_event=0 | takeover_off_ob1=0 | max_off=4 | tps0_sec=7 | max_p95_ms=59 | err=0 | 判定=切主
