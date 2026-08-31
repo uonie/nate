@@ -101,7 +101,7 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
   <h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
   <div class="meta">
     OceanBase 4.3.5.5 &nbsp;·&nbsp; Azure Standard D32s v6 + Premium SSD v2
-    &nbsp;·&nbsp; 生成时间 2026-08-31 09:49
+    &nbsp;·&nbsp; 生成时间 2026-08-31 09:53
   </div>
 </header>
 <section class=""><h1>OceanBase on Azure v6 存储 I/O 抖动韧性分析与最佳实践</h1>
@@ -168,13 +168,13 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--line);
 <td>Q2</td>
 <td>默认参数下抖动会造成什么影响</td>
 <td><strong>确定会切主</strong>。日志盘门槛 5s，数据盘门槛约 15s；现场 14/14 次慢 I/O 均 &gt; 5s（p50 10.2s）</td>
-<td>S3 / F1</td>
+<td>S2 / S8 / F1</td>
 </tr>
 <tr>
 <td>Q3</td>
 <td><strong>能否通过调参完全吸收</strong></td>
 <td><strong>可以吸收到 60s 量级，且不牺牲真实坏盘检出。</strong> 关键参数是两个 <code>*_tolerance_time</code>（上限均为 300s）。<strong>触发路径不经过 PALF 4s 硬编码租约</strong>，故不存在"调不动的天花板"</td>
-<td>S3 / S7</td>
+<td>S7 / S3 / S9</td>
 </tr>
 <tr>
 <td>Q4</td>
@@ -1425,11 +1425,11 @@ dracut<span style="color: #BBB"> </span>-f<span style="color: #BBB"> </span>--re
 
 reboot
 
-<span style="color: #60A0B0; font-style: italic"># 验证（三处都要看）</span>
-cat<span style="color: #BBB"> </span>/proc/cmdline
-cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout<span style="color: #BBB">      </span><span style="color: #60A0B0; font-style: italic"># 期望 240</span>
-cat<span style="color: #BBB"> </span>/sys/block/nvme0n1/device/../../<span style="color: #BBB">  </span><span style="color: #40A070">2</span>&gt;/dev/null<span style="color: #BBB">    </span><span style="color: #60A0B0; font-style: italic"># 确认设备存在</span>
-uname<span style="color: #BBB"> </span>-r<span style="color: #BBB">                                             </span><span style="color: #60A0B0; font-style: italic"># 记录实际内核版本</span>
+<span style="color: #60A0B0; font-style: italic"># 验证（四处都要看）</span>
+cat<span style="color: #BBB"> </span>/proc/cmdline<span style="color: #BBB"> </span>|<span style="color: #BBB"> </span>tr<span style="color: #BBB"> </span><span style="color: #4070A0">' '</span><span style="color: #BBB"> </span><span style="color: #4070A0">'\n'</span><span style="color: #BBB"> </span>|<span style="color: #BBB"> </span>grep<span style="color: #BBB"> </span>nvme_core<span style="color: #BBB">   </span><span style="color: #60A0B0; font-style: italic"># 期望 nvme_core.io_timeout=240</span>
+cat<span style="color: #BBB"> </span>/sys/module/nvme_core/parameters/io_timeout<span style="color: #BBB">    </span><span style="color: #60A0B0; font-style: italic"># 期望 240</span>
+lsblk<span style="color: #BBB"> </span>-d<span style="color: #BBB"> </span>-o<span style="color: #BBB"> </span>NAME,MODEL,SIZE<span style="color: #BBB"> </span>|<span style="color: #BBB"> </span>grep<span style="color: #BBB"> </span>-i<span style="color: #BBB"> </span>nvme<span style="color: #BBB">         </span><span style="color: #60A0B0; font-style: italic"># 确认走的是 NVMe 接口</span>
+uname<span style="color: #BBB"> </span>-r<span style="color: #BBB">                                           </span><span style="color: #60A0B0; font-style: italic"># 记录实际内核版本</span>
 </code></pre></div>
 
 <blockquote>
@@ -1603,7 +1603,7 @@ uname<span style="color: #BBB"> </span>-r<span style="color: #BBB">             
 <tbody>
 <tr>
 <td>1</td>
-<td>在三节点执行 §0 结论速览中的 <strong><code>FAILURE_DETECTOR</code> 事件查询 SQL</strong></td>
+<td>在三节点执行<strong>结论速览</strong>中的 <strong><code>FAILURE_DETECTOR</code> 事件查询 SQL</strong></td>
 <td><strong>一条 SQL 即可确证</strong> 2026-07-20 的切主是否由磁盘故障判定引发，以及是 LOG 还是 STORAGE 模块</td>
 </tr>
 <tr>
@@ -1647,18 +1647,24 @@ uname<span style="color: #BBB"> </span>-r<span style="color: #BBB">             
 </tr>
 <tr>
 <td>7</td>
-<td>执行 S3（日志盘）与 S7（调优后）对照</td>
+<td>执行 <code>TEST-PLAN.md</code> §5.1 <strong><code>tolerance_time</code> 门槛标定实验</strong>（场景 S1，日志盘全档位注入）</td>
 <td>验证 §5.1 的源码结论，标定最优 <code>tolerance_time</code></td>
 <td>§8 参数取值定稿</td>
 </tr>
 <tr>
 <td>8</td>
-<td>执行 S11（A/B 布局对比）</td>
+<td>执行 S11（A/B 布局性能对比）</td>
 <td>验证"条带化换不来性能"命题</td>
 <td>§4.1.1、L2 建议定稿</td>
 </tr>
 <tr>
 <td>9</td>
+<td>执行 S7（三节点同时抖动）</td>
+<td>界定"架构无法兜底"的边界</td>
+<td>§5.2 边界说明定稿</td>
+</tr>
+<tr>
+<td>10</td>
 <td>在 4.3.5.5 上用 <code>GV$OB_PARAMETERS</code> 复核全部参数默认值</td>
 <td>确认本文源码引用与实际版本一致</td>
 <td>§3 各表格的版本适用性</td>
@@ -1666,6 +1672,8 @@ uname<span style="color: #BBB"> </span>-r<span style="color: #BBB">             
 </tbody>
 </table>
 <blockquote>
+<p>上表 S1 / S7 / S11 为 <code>TEST-PLAN.md</code> 的<strong>测试场景编号</strong>；
+正文中形如 <code>[源码] S3</code> 的引用为<strong>附录源码清单编号</strong>，两套编号互不相干。</p>
 <p>§8 中的参数<strong>方向性结论已由源码确定</strong>（调 <code>tolerance_time</code>、不调 <code>trigger_percentage</code>），
 但<strong>具体取值（60s）仍建议经第 7 项标定后再定稿</strong>。</p>
 </blockquote>

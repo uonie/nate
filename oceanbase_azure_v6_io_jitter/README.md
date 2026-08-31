@@ -41,8 +41,8 @@ OceanBase 在云上块存储环境中对**瞬时 I/O 高延迟事件**的敏感�
 | # | 问题 | 结论 | 依据 |
 |---|---|---|---|
 | Q1 | OB 在 Azure v6 上表现如何 | **无版本级不兼容**。OB 4.3.5 官方支持 Rocky Linux 9 [官方]；Rocky Linux 是 Azure 认可发行版 [官方]。问题不在"能不能跑"，而在**默认容错阈值与云盘延迟分布不匹配** | A7 / A8 |
-| Q2 | 默认参数下抖动会造成什么影响 | **确定会切主**。日志盘门槛 5s，数据盘门槛约 15s；现场 14/14 次慢 I/O 均 > 5s（p50 10.2s） | S3 / F1 |
-| Q3 | **能否通过调参完全吸收** | **可以吸收到 60s 量级，且不牺牲真实坏盘检出。** 关键参数是两个 `*_tolerance_time`（上限均为 300s）。**触发路径不经过 PALF 4s 硬编码租约**，故不存在"调不动的天花板" | S3 / S7 |
+| Q2 | 默认参数下抖动会造成什么影响 | **确定会切主**。日志盘门槛 5s，数据盘门槛约 15s；现场 14/14 次慢 I/O 均 > 5s（p50 10.2s） | S2 / S8 / F1 |
+| Q3 | **能否通过调参完全吸收** | **可以吸收到 60s 量级，且不牺牲真实坏盘检出。** 关键参数是两个 `*_tolerance_time`（上限均为 300s）。**触发路径不经过 PALF 4s 硬编码租约**，故不存在"调不动的天花板" | S7 / S3 / S9 |
 | Q4 | 最佳实践配置 | 见 §8。**最小改动集**为下方 4 条 | — |
 
 **最小改动集（按收益/风险排序）：**
@@ -736,11 +736,11 @@ dracut -f --regenerate-all
 
 reboot
 
-# 验证（三处都要看）
-cat /proc/cmdline
-cat /sys/module/nvme_core/parameters/io_timeout      # 期望 240
-cat /sys/block/nvme0n1/device/../../  2>/dev/null    # 确认设备存在
-uname -r                                             # 记录实际内核版本
+# 验证（四处都要看）
+cat /proc/cmdline | tr ' ' '\n' | grep nvme_core   # 期望 nvme_core.io_timeout=240
+cat /sys/module/nvme_core/parameters/io_timeout    # 期望 240
+lsblk -d -o NAME,MODEL,SIZE | grep -i nvme         # 确认走的是 NVMe 接口
+uname -r                                           # 记录实际内核版本
 ```
 
 > Red Hat 官方文档对该流程的表述 [官方]：*"Generate a new initial RAM disk image to apply the changes: `dracut -f -v ...`"*，*"The changes described in this procedure will take effect and persist after rebooting the system."*
@@ -832,7 +832,7 @@ if (current_ts >= error_ts || (sys_io_errno != 0 && fs_error_times >= 100)) {
 
 | # | 事项 | 目的 |
 |---|---|---|
-| 1 | 在三节点执行 §0 结论速览中的 **`FAILURE_DETECTOR` 事件查询 SQL** | **一条 SQL 即可确证** 2026-07-20 的切主是否由磁盘故障判定引发，以及是 LOG 还是 STORAGE 模块 |
+| 1 | 在三节点执行**结论速览**中的 **`FAILURE_DETECTOR` 事件查询 SQL** | **一条 SQL 即可确证** 2026-07-20 的切主是否由磁盘故障判定引发，以及是 LOG 还是 STORAGE 模块 |
 | 2 | 现场核实 `cat /sys/module/nvme_core/parameters/io_timeout` | 确认 Rocky 9.8 镜像实际生效值是 240 还是 30（Azure 清单未含 9.6 之后版本） |
 | 3 | 现场核实 `tuned-adm active` + `sysctl vm.swappiness vm.dirty_ratio` | 排查 tuned `virtual-guest` 覆盖 OB 官方要求的 `vm.swappiness=0`（§8 L1） |
 | 4 | 向客户索取各磁盘的 provisioned IOPS / 吞吐设置 | 判定条带化是否真的换到了性能（§4.1.1、L2） |
@@ -843,9 +843,13 @@ if (current_ts >= error_ts || (sys_io_errno != 0 && fs_error_times >= 100)) {
 | # | 事项 | 目的 | 阻塞了什么 |
 |---|---|---|---|
 | 6 | 搭建 3 × D32s v6 测试环境 | 执行 `TEST-PLAN.md` | §7 全部实测章节 |
-| 7 | 执行 S3（日志盘）与 S7（调优后）对照 | 验证 §5.1 的源码结论，标定最优 `tolerance_time` | §8 参数取值定稿 |
-| 8 | 执行 S11（A/B 布局对比） | 验证"条带化换不来性能"命题 | §4.1.1、L2 建议定稿 |
-| 9 | 在 4.3.5.5 上用 `GV$OB_PARAMETERS` 复核全部参数默认值 | 确认本文源码引用与实际版本一致 | §3 各表格的版本适用性 |
+| 7 | 执行 `TEST-PLAN.md` §5.1 **`tolerance_time` 门槛标定实验**（场景 S1，日志盘全档位注入） | 验证 §5.1 的源码结论，标定最优 `tolerance_time` | §8 参数取值定稿 |
+| 8 | 执行 S11（A/B 布局性能对比） | 验证"条带化换不来性能"命题 | §4.1.1、L2 建议定稿 |
+| 9 | 执行 S7（三节点同时抖动） | 界定"架构无法兜底"的边界 | §5.2 边界说明定稿 |
+| 10 | 在 4.3.5.5 上用 `GV$OB_PARAMETERS` 复核全部参数默认值 | 确认本文源码引用与实际版本一致 | §3 各表格的版本适用性 |
+
+> 上表 S1 / S7 / S11 为 `TEST-PLAN.md` 的**测试场景编号**；
+> 正文中形如 `[源码] S3` 的引用为**附录源码清单编号**，两套编号互不相干。
 
 > §8 中的参数**方向性结论已由源码确定**（调 `tolerance_time`、不调 `trigger_percentage`），
 > 但**具体取值（60s）仍建议经第 7 项标定后再定稿**。
